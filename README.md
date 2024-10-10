@@ -2,8 +2,8 @@
 
 |   Nom   | Prénom |
 |---------|--------|
-|   Doe   |  Jane  |
-|   Doe   |  John  |
+|   TOUABA   |  Rabie  |
+|   MEKSAOUI   |  Aris  |
 
 Le TP est à réaliser par groupe de 2.
 
