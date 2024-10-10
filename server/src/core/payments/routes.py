@@ -68,6 +68,9 @@ def create_sheet(
         customer.id
     )
 
+    print("HI")
+    print(payment_sheet)
+
     pending_items: dict = {pi.id: pi.amount for pi in payment_sheet.pending_items}
     items_id: List[int] = [pi.id for pi in payment_sheet.pending_items]
     items: List[Item] = db.query(Item).filter(Item.id.in_(items_id)).all()

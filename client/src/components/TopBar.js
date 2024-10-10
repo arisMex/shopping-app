@@ -35,10 +35,17 @@ const styles = StyleSheet.create({
         width: "100%",
     },
     logo: {
+<<<<<<< HEAD
         width: 80,
         height: 50,
         resizeMode: 'contain',
         marginLeft: 20
+=======
+        width: 80, 
+        height: 50, 
+        resizeMode: 'contain', 
+        marginLeft:20
+>>>>>>> 2e106be (slight modifications)
     },
     title: {
         color: 'white',

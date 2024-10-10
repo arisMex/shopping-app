@@ -19,10 +19,11 @@ export default CartScreen = ({ navigation }) => {
 
     const openDatabase = async () => {
         const utils = new DbUtils();
-        await utils.init();
+        await utils.init(); 
         setDbUtils(utils);
-
-        const items = await utils.getCartItems();
+        
+        await utils.fillTest(); 
+        const items = await utils.getCartItems(); 
         setCartItems(items);
     };
 
@@ -66,6 +67,7 @@ export default CartScreen = ({ navigation }) => {
         </View>
     );
     
+
 
 
     return (
@@ -112,6 +114,7 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         width: '100%',
+        padding: 16,
     },
     content: {
         flex: 1,
