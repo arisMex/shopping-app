@@ -2,7 +2,7 @@
 
 |   Nom   | Prénom |
 |---------|--------|
-|   TOUABA   |  Rabie  |
+|   TOABA   |  Rabie  |
 |   MEKSAOUI   |  Aris  |
 
 Le TP est à réaliser par groupe de 2.
