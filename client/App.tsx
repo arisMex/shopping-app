@@ -10,7 +10,7 @@ export default function App() {
   return (
     <NavigationContainer>
       <Stack.Navigator initialRouteName="CodeBarScanner" screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="CodeBarScanner" component={CodeBarScanner} />
+        <Stack.Screen name="Scan" component={CodeBarScanner} />
       </Stack.Navigator>
     </NavigationContainer>
   );
