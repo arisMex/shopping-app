@@ -1,18 +1,17 @@
-import { StripeProvider } from '@stripe/stripe-react-native';
-import Constants from 'expo-constants';
-import CheckoutScreen from './CheckoutScreen';
+import React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createStackNavigator } from '@react-navigation/stack';
+
+import CodeBarScanner from './src/screens/CodeBarScanner'; 
+
+const Stack = createStackNavigator();
 
 export default function App() {
-  const stripePK = Constants.expoConfig.extra.stripePK;
-
   return (
-    <StripeProvider
-      publishableKey={stripePK}
-      merchantIdentifier="merchant.com.example"
-    >
-      <CheckoutScreen />
-    </StripeProvider>
+    <NavigationContainer>
+      <Stack.Navigator initialRouteName="CodeBarScanner" screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="CodeBarScanner" component={CodeBarScanner} />
+      </Stack.Navigator>
+    </NavigationContainer>
   );
 }
-
-
