@@ -10,7 +10,7 @@ export default function CheckoutScreen() {
 
     const apiUrl = Constants.expoConfig.extra.apiUrl;
 
-    const userId = "cus_R0Lu680x5Dky69";
+    const userId = "cus_R0LgWnsQ9NPMN6";
     const items = [
         {
             "id": 1,
