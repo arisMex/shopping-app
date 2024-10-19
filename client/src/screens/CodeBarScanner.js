@@ -5,14 +5,47 @@ import TabBar from '../components/TabNavigation';
 import TopBar from '../components/TopBar';
 import { MaterialIcons } from '@expo/vector-icons';
 
+import DbUtils from '../helpers/dbUtils';
+
 export default function CodeBarScanner({ navigation }) {
   const [hasPermission, setHasPermission] = useState(null);
   const [scanned, setScanned] = useState(false);
   const [panier, setPanier] = useState([]);
+  const [totalPrice, setTotalPrice] = useState(0);
   const [number, onChangeNumber] = useState('');
+
+
 
   const isDisabled = number === '';
 
+  const [dbUtils, setDbUtils] = useState(null);
+
+  const openDatabase = async () => {
+    const utils = new DbUtils();
+    await utils.init();
+    setDbUtils(utils);
+    const cartItems = await utils.getCartItems(); 
+    setPanier(cartItems); 
+  };
+
+  const addItemToCart = async (itemDetails) => {
+    try {
+      await dbUtils.addItem(itemDetails.name, itemDetails.price, "445555");
+      const cartItems = await dbUtils.getCartItems();
+      console.log("ldldld", cartItems);
+      
+      setPanier(cartItems)
+    } catch (error) {
+      console.error("Error adding item to cart", error);
+    }
+  };
+
+  
+
+
+  useEffect(() => {
+    openDatabase();
+  }, []);
   useEffect(() => {
     (async () => {
       const { status } = await BarCodeScanner.requestPermissionsAsync();
@@ -25,14 +58,47 @@ export default function CodeBarScanner({ navigation }) {
   };
 
 
-  const handleBarCodeScanned = async ({ type, data }) => {
+  const handleBarCodeScanned = async ({ type, item_barcode }) => {
     setScanned(true);
 
-    setPanier(prevPanier => [...prevPanier, data]); 
+    //TODO :  ajouter peut etre un petit son : tiiiin !
 
+    try {
+      // Récupérer les détails de l'élément à partir de la base de données
+
+      //TODO await dbUtils.fetchItemDetails()
+      itemDetails = await dbUtils.fetchItemDetails(2)
+
+      if (itemDetails) {
+        setPanier(prevPanier => {
+          const existingItemIndex = prevPanier.findIndex(item => item.id === itemDetails.id);
+
+          if (existingItemIndex !== -1) {
+            // Si l'élément existe, on incrémente la quantité
+            const updatedPanier = [...prevPanier];
+            updatedPanier[existingItemIndex].quantity += 1;
+            addItemToCart(itemDetails)
+            return updatedPanier;
+          } else {
+            addItemToCart(itemDetails)
+            return [...prevPanier, { ...itemDetails, quantity: 1 }];
+          }
+        });
+
+        // Mettre à jour le prix total
+        setTotalPrice(totalPrice + itemDetails.price);
+      } else {
+        console.log('Élément non trouvé pour le code-barres:', item_barcode);
+      }
+    } catch (error) {
+      console.error('Erreur lors de la récupération des détails de l\'élément:', error);
+    }
+
+    // Attendre un peu avant de réinitialiser le scanner
     await sleep(1500);
     setScanned(false);
   };
+
 
   if (hasPermission === null) {
     return <Text>Requesting for camera permission...</Text>;
@@ -40,8 +106,36 @@ export default function CodeBarScanner({ navigation }) {
   if (hasPermission === false) {
     return <Text>No access to camera</Text>;
   }
-  const onAdd = () => {
-    setPanier(prevPanier => [...prevPanier, number]);
+
+  const onAdd = async ({ type, item_barcode }) => {
+    try {
+      // Récupérer les détails de l'élément à partir de la base de données
+
+      //TODO await dbUtils.fetchItemDetails()
+      itemDetails = await dbUtils.fetchItemDetails(1)
+
+      if (itemDetails) {
+        setPanier(prevPanier => {
+          const existingItemIndex = prevPanier.findIndex(item => item.id === itemDetails.id);
+
+          if (existingItemIndex !== -1) {
+            // Si l'élément existe, on incrémente la quantité
+            const updatedPanier = [...prevPanier];
+            updatedPanier[existingItemIndex].quantity += 1;
+            return updatedPanier;
+          } else {
+            return [...prevPanier, { ...itemDetails, quantity: 1 }];
+          }
+        });
+
+        // Mettre à jour le prix total
+        setTotalPrice(totalPrice + itemDetails.price);
+      } else {
+        console.log('Élément non trouvé pour le code-barres:', item_barcode);
+      }
+    } catch (error) {
+      console.error('Erreur lors de la récupération des détails de l\'élément:', error);
+    }
     onChangeNumber('')
   };
 
@@ -50,7 +144,7 @@ export default function CodeBarScanner({ navigation }) {
       <StatusBar
         animated={true}
         backgroundColor={"red"}
-        barStyle={'light-content'}
+        barStyle={'light-content'} //TODO dark/light
         translucent={true}
         hidden={false}
       />
@@ -68,25 +162,50 @@ export default function CodeBarScanner({ navigation }) {
           onChangeText={onChangeNumber}
           value={number}
           placeholder="Saisir le code bar ..."
+          placeholderTextColor={"gray"}
           keyboardType="numeric"
         />
         <TouchableOpacity
-          style={[styles.button, isDisabled && styles.disabledButton]} 
-          onPress={isDisabled ? null : onAdd} 
-          disabled={isDisabled} 
+          style={[styles.button, isDisabled && styles.disabledButton]}
+          onPress={isDisabled ? null : onAdd}
+          disabled={isDisabled}
         >
           <MaterialIcons name="add" size={20} color={isDisabled ? 'gray' : 'white'} style={styles.icon} />
         </TouchableOpacity>
       </View>
 
+      <View style={styles.totalPriceContainer}>
+        <Text style={styles.totalPriceText}>
+          Total Price: {totalPrice.toFixed(2)} €
+        </Text>
+        <Text style={styles.totalPriceText}>
+          {panier.length} {panier.length != 1 ? "items" : "item"}
+        </Text>
+      </View>
+
       <FlatList
         data={panier}
         renderItem={({ item, index }) => (
-          <Text style={styles.item}>{index + 1}.   {item} item name</Text>
+          <View style={styles.itemContainer}>
+            <Text style={styles.itemIndex}>
+              {index + 1}.
+            </Text>
+            <View style={styles.itemDetails}>
+              <Text style={styles.itemName}>
+                {item.name}
+              </Text>
+              <Text style={styles.itemPrice}>
+                {item.price} € x {item.quantity} = {(item.price * item.quantity).toFixed(2)} €
+              </Text>
+            </View>
+          </View>
         )}
-        keyExtractor={(item, index) => index.toString()}
+        keyExtractor={(item) => item.id.toString()}
         style={styles.panierList}
       />
+
+
+
 
       <TabBar
         navigation={navigation}
@@ -168,6 +287,51 @@ const styles = StyleSheet.create({
   },
 
   disabledButton: {
-    backgroundColor: '#ccc', 
+    backgroundColor: '#ccc',
+  },
+
+  panierList: {
+    padding: 10,
+  },
+  itemContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderColor: '#ccc',
+  },
+  itemIndex: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  itemDetails: {
+    flex: 1,
+    marginLeft: 10,
+  },
+  itemName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  itemPrice: {
+    fontSize: 14,
+    color: 'green',
+  },
+
+  totalPriceContainer: {
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    marginTop: 10,
+    borderTopWidth: 1,
+    borderColor: '#ccc',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  totalPriceText: {
+    color: 'red',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
 });
