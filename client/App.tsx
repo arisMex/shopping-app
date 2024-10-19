@@ -15,3 +15,6 @@ export default function App() {
     </NavigationContainer>
   );
 }
+
+
+//API_URL=http://172.26.4.210:8000 STRIPE_PK=pk_test_51Q8KlBRtCkB3lU21FQ3wA4RHShA0NAKpjbn65Lmei7SbpGNQMhHnF1CGTEAMoaeWdb4wtOH6OiLEUx95CqJJtjZr00xwchlNoX npx expo start -c

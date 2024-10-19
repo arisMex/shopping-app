@@ -28,7 +28,7 @@ const TabBar = ({ navigation }) => {
 const styles = StyleSheet.create({
     tabBar: {
         flexDirection: 'row',
-        justifyContent: 'space-around', // Use space-around to evenly distribute buttons
+        justifyContent: 'space-around', 
         alignItems: 'center',
         paddingVertical: Platform.OS === "ios" ? 15 : 10,
         backgroundColor: "red",
@@ -46,8 +46,8 @@ const styles = StyleSheet.create({
     },
     buttonText: {
         color: "white",
-        fontSize: 12, // Slightly smaller font size for better alignment
-        marginTop: 5, // Add some space between the icon and the text
+        fontSize: 12, 
+        marginTop: 5, 
     },
 });
 

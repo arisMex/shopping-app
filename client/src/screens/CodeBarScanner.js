@@ -3,14 +3,15 @@ import { Text, View, StyleSheet, Button, TextInput, FlatList, Alert, StatusBar, 
 import { BarCodeScanner } from 'expo-barcode-scanner';
 import TabBar from '../components/TabNavigation';
 import TopBar from '../components/TopBar';
-import { MaterialIcons } from '@expo/vector-icons'; 
-//import { ScrollView } from 'react-native-gesture-handler';
+import { MaterialIcons } from '@expo/vector-icons';
 
 export default function CodeBarScanner({ navigation }) {
   const [hasPermission, setHasPermission] = useState(null);
   const [scanned, setScanned] = useState(false);
   const [panier, setPanier] = useState([]);
   const [number, onChangeNumber] = useState('');
+
+  const isDisabled = number === '';
 
   useEffect(() => {
     (async () => {
@@ -27,9 +28,9 @@ export default function CodeBarScanner({ navigation }) {
   const handleBarCodeScanned = async ({ type, data }) => {
     setScanned(true);
 
-    setPanier(prevPanier => [...prevPanier, data]); // Ajouter l'élément scanné au panier
+    setPanier(prevPanier => [...prevPanier, data]); 
 
-    await sleep(2000);
+    await sleep(1500);
     setScanned(false);
   };
 
@@ -50,16 +51,16 @@ export default function CodeBarScanner({ navigation }) {
         animated={true}
         backgroundColor={"red"}
         barStyle={'light-content'}
-        translucent={Platform.OS === 'android'}
+        translucent={true}
+        hidden={false}
       />
 
       <TopBar />
 
       <BarCodeScanner
         onBarCodeScanned={scanned ? undefined : handleBarCodeScanned}
-        style={styles.camera}
+        style={[styles.camera, { opacity: scanned ? 0.5 : 1 }]}
       />
-      {scanned && <Button title="Scan Again" onPress={() => setScanned(false)} />}
 
       <View style={styles.inputView}>
         <TextInput
@@ -69,8 +70,12 @@ export default function CodeBarScanner({ navigation }) {
           placeholder="Saisir le code bar ..."
           keyboardType="numeric"
         />
-        <TouchableOpacity style={styles.button} onPress={onAdd}>
-          <MaterialIcons name="add" size={20} color="white" style={styles.icon} />
+        <TouchableOpacity
+          style={[styles.button, isDisabled && styles.disabledButton]} 
+          onPress={isDisabled ? null : onAdd} 
+          disabled={isDisabled} 
+        >
+          <MaterialIcons name="add" size={20} color={isDisabled ? 'gray' : 'white'} style={styles.icon} />
         </TouchableOpacity>
       </View>
 
@@ -128,7 +133,7 @@ const styles = StyleSheet.create({
     marginBottom: 200,
     width: '90%',
     alignSelf: 'center',
-    height: "50%", 
+    height: "50%",
     backgroundColor: 'white',
   },
   item: {
@@ -140,7 +145,7 @@ const styles = StyleSheet.create({
   button: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'red', 
+    backgroundColor: 'red',
     padding: 10,
     borderRadius: 5,
     height: 40
@@ -148,10 +153,10 @@ const styles = StyleSheet.create({
   buttonText: {
     color: 'white',
     fontSize: 16,
-    marginLeft: 5, 
+    marginLeft: 5,
   },
   icon: {
-    marginRight: 5, 
+    marginRight: 5,
   },
 
   inputView: {
@@ -160,5 +165,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     alignContent: "center",
     justifyContent: "center"
-  }
+  },
+
+  disabledButton: {
+    backgroundColor: '#ccc', 
+  },
 });
