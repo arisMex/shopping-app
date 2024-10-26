@@ -11,91 +11,80 @@ export default class DbUtils {
         await this.createTable();
     }
 
-    fillTest = async () => {
-        return await this.addItem("banana", 2000, "0000");
-    }
 
     //shopping cart
     createTable = async () => {
         if (this.db) {
-            const tableExists = await this.db.getAllAsync(`
+            // Vérifiez d'abord si la table existe
+            const result = await this.db.getAllAsync(`
                 SELECT name FROM sqlite_master WHERE type='table' AND name='cart';
             `);
 
-            if (!tableExists) {
+            // Si la table n'existe pas, créez-la
+            if (result.length === 0) {
                 await this.db.execAsync(`
-                  CREATE TABLE cart (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    name TEXT,
-                    price REAL,
-                    quantity INTEGER,
-                    barcode TEXT
-                  );`);
-            }
-        }
-    };
-
-    getCartItems = async () => {
-        return new Promise((resolve, reject) => {
-            if (this.db) {
-                this.db.getAllAsync(tx => {
-                    tx.executeSql(
-                        'SELECT * FROM cart',
-                        [],
-                        (_, { rows: { _array } }) => {
-                            console.log("Items fetched from cart:", _array);
-                            resolve(_array); // Return the items array
-                        },
-                        (txObj, error) => {
-                            console.log("Error fetching cart items", error);
-                            reject([]);
-                        }
+                    CREATE TABLE cart (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        name TEXT,
+                        price REAL,
+                        quantity INTEGER,
+                        barcode TEXT
                     );
-                });
-            } else {
-                console.log("Database is not initialized.");
-                resolve([]);
+                `);
+                console.log("Table 'cart' créée avec succès.");
             }
-        });
-    };
-
-    addItem = async (name, price, barcode) => {
-        if (this.db) {
-            return new Promise((resolve, reject) => {
-                this.db.getAllAsync(tx => {
-                    // Check if the item already exists in the cart
-                    tx.executeSql(
-                        'SELECT * FROM cart WHERE barcode = ?',
-                        [barcode],
-                        async (_, { rows }) => {
-                            if (rows.length > 0) {
-                                // Item already exists, increment the quantity
-                                await tx.executeSql(
-                                    'UPDATE cart SET quantity = quantity + 1 WHERE barcode = ?',
-                                    [barcode]
-                                );
-                                console.log(`Updated quantity for item: ${name}`);
-                            } else {
-                                // Item does not exist, insert it
-                                await tx.executeSql(
-                                    'INSERT INTO cart (name, price, quantity, barcode) VALUES (?, ?, ?, ?)',
-                                    [name, price, 1, barcode]
-                                );
-                                console.log(`Inserted new item: ${name}`);
-                            }
-                            resolve(); // Resolve the promise after operation
-                        },
-                        (_, error) => {
-                            console.log("Error during select", error);
-                            reject(error); // Reject on error
-                        }
-                    );
-                });
-            });
         } else {
             console.log("Database is not initialized.");
         }
     };
+
+
+    getCartItems = async () => {
+        if (this.db) {
+            const result = await this.db.getAllAsync('SELECT * FROM cart');
+            return result;
+        }
+        return [];
+    };
+
+
+
+    fillTest = async () => {
+        return await this.addItem("banana", 2000, "0000");
+    }
+
+    addItem = async (name, price, barcode) => {
+        if (this.db) {
+            const result = await this.db.getAllAsync('SELECT * FROM cart WHERE barcode = ?', [barcode]);
+            console.log(result);
+
+            if (result.length > 0) {
+                response = await this.db.runAsync('UPDATE cart SET quantity = quantity + 1 WHERE barcode = ?', [barcode]);
+            } else {
+                await this.db.runAsync('INSERT INTO cart (name, price, quantity, barcode) VALUES (?, ?, ?, ?)', [name, price, 1, barcode]);
+            }
+        }
+    };
+
+    removeItem = async (barcode) => {
+        if (this.db) {
+            try {
+                const result = await this.db.getAllAsync('SELECT * FROM cart WHERE barcode = ?', [barcode]);
+
+                if (result.length > 0) {
+                    await this.db.runAsync('DELETE FROM cart WHERE barcode = ?', [barcode]);
+                    console.log(`Article avec le code-barres ${barcode} a été supprimé.`);
+                } else {
+                    console.log(`Aucun article trouvé avec le code-barres ${barcode}.`);
+                }
+            } catch (error) {
+                console.log("Erreur lors de la suppression de l'article:", error);
+            }
+        } else {
+            console.log("Database is not initialized.");
+        }
+    };
+
 
     increaseQuantity = async (id) => {
         if (this.db) {
@@ -126,16 +115,15 @@ export default class DbUtils {
                 throw new Error(`HTTP error! Status: ${response.status}`);
             }
 
-            const { id, name, price } = await response.json();
+            const { id, name, price, barcode } = await response.json();
 
-            return { id, name, price };
+            return { id, name, price, barcode };
         } catch (error) {
             console.log('Error fetching item details:', error);
             return null;
         }
     };
 
-    // Get item details from server by its barcode
     fetch_payments_by_customer_id = async (user_id) => {
         try {
             const response = await fetch(`${apiUrl}/payments/${user_id}`, {

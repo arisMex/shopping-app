@@ -55,7 +55,9 @@ export default function CodeBarScanner({ navigation }) {
   };
 
 
-  const handleBarCodeScanned = async ({ type, item_barcode }) => {
+  const handleBarCodeScanned = async ({ type, data }) => {
+    item_barcode = data
+    
     setScanned(true);
 
     //TODO :  ajouter peut etre un petit son : tiiiin !
@@ -64,7 +66,7 @@ export default function CodeBarScanner({ navigation }) {
       // Récupérer les détails de l'élément à partir de la base de données
 
       //TODO await dbUtils.fetchItemDetails()
-      itemDetails = await dbUtils.fetchItemDetails(2)
+      itemDetails = await dbUtils.fetchItemDetails(item_barcode)
 
       if (itemDetails) {
         setPanier(prevPanier => {
