@@ -130,7 +130,7 @@ export default class DbUtils {
 
             return { id, name, price };
         } catch (error) {
-            console.error('Error fetching item details:', error);
+            console.log('Error fetching item details:', error);
             return null;
         }
     };
@@ -152,7 +152,7 @@ export default class DbUtils {
 
             return result;
         } catch (error) {
-            console.error('Error fetching item details:', error);
+            console.log('Error fetching item details:', error);
             return null;
         }
     };

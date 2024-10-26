@@ -75,7 +75,6 @@ export default function History({ navigation }) {
                 )
               }
 
-
               {/* Toggle Button */}
               < View >
                 <TouchableOpacity onPress={() => toggleExpand(payment.id)} style={styles.toggleButton} >

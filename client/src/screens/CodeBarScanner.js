@@ -64,7 +64,7 @@ export default function CodeBarScanner({ navigation }) {
       // Récupérer les détails de l'élément à partir de la base de données
 
       //TODO await dbUtils.fetchItemDetails()
-      itemDetails = await dbUtils.fetchItemDetails("4006381333627")
+      itemDetails = await dbUtils.fetchItemDetails(2)
 
       if (itemDetails) {
         setPanier(prevPanier => {
