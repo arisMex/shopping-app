@@ -56,8 +56,6 @@ export default class DbUtils {
     addItem = async (name, price, barcode) => {
         if (this.db) {
             const result = await this.db.getAllAsync('SELECT * FROM cart WHERE barcode = ?', [barcode]);
-            console.log(result);
-
             if (result.length > 0) {
                 response = await this.db.runAsync('UPDATE cart SET quantity = quantity + 1 WHERE barcode = ?', [barcode]);
             } else {
