@@ -3,14 +3,18 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 
 import CodeBarScanner from './src/screens/CodeBarScanner'; 
+import History from './src/screens/History'
+import Checkout from './src/screens/CheckoutScreen';
 
 const Stack = createStackNavigator();
 
 export default function App() {
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="CodeBarScanner" screenOptions={{ headerShown: false }}>
+      <Stack.Navigator initialRouteName="Checkout" screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Scan" component={CodeBarScanner} />
+        <Stack.Screen name="History" component={History} />
+        <Stack.Screen name="Checkout" component={Checkout} />
       </Stack.Navigator>
     </NavigationContainer>
   );

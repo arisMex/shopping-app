@@ -18,12 +18,12 @@ const styles = StyleSheet.create({
         padding: 10,
         elevation: 5, 
         width : "100%", 
-        marginTop: 15
     },
     logo: {
         width: 80, 
         height: 50, 
         resizeMode: 'contain', 
+        marginLeft:20
     },
     title: {
         color: 'white',

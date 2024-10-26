@@ -115,14 +115,13 @@ export default class DbUtils {
     fetchItemDetails = async (item_barcode) => {
         try {
             //TODO const response = await fetch(`${apiUrl}/items/barcode/${item_barcode}`, {
-            const response = await fetch(`${apiUrl}/items/${item_barcode}`, {
+            const response = await fetch(`${apiUrl}/items/barcode/${item_barcode}`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
                 }
             });
 
-            // Vérifiez si la réponse est correcte
             if (!response.ok) {
                 throw new Error(`HTTP error! Status: ${response.status}`);
             }
@@ -136,4 +135,29 @@ export default class DbUtils {
         }
     };
 
+    // Get item details from server by its barcode
+    fetch_payments_by_customer_id = async (user_id) => {
+        try {
+            const response = await fetch(`${apiUrl}/payments/${user_id}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+
+            const result = await response.json();
+
+            return result;
+        } catch (error) {
+            console.error('Error fetching item details:', error);
+            return null;
+        }
+    };
+
+
 }
+
+
