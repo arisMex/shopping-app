@@ -1,19 +1,22 @@
 import { useStripe } from "@stripe/stripe-react-native";
 import Constants from "expo-constants";
 import React, { useEffect, useState } from "react";
-import { Alert, Text, Button, SafeAreaView } from "react-native";
+import { Alert, Text, Button, SafeAreaView, StatusBar, Platform, StyleSheet, View } from "react-native";
+import TabBar from '../components/TabNavigation';
+import TopBar from '../components/TopBar';
 
 
 
-export default function CheckoutScreen() {
+
+export default function Checkout({ navigation }) {
     const { initPaymentSheet, presentPaymentSheet } = useStripe();
     const [loading, setLoading] = useState(false);
-    const [paymentIntentId, setPaymentIntentId] = useState<string>("");
+    const [paymentIntentId, setPaymentIntentId] = useState("");
 
     const apiUrl = Constants.expoConfig?.extra?.apiUrl;
     const stripePK = Constants.expoConfig?.extra?.stripePK;
 
-    const userId = "cus_R0LgWnsQ9NPMN6";
+    const userId = "cus_R0Lu680x5Dky69";
     const items = [
         {
             "id": 1,
@@ -89,13 +92,78 @@ export default function CheckoutScreen() {
     }, []);
 
     return (
-        <SafeAreaView>
-            <Text>Payment</Text>
-            <Button
-                disabled={!loading}
-                title="Checkout"
-                onPress={openPaymentSheet}
+        <View style={styles.container}>
+
+            <StatusBar
+                animated={true}
+                backgroundColor={"red"}
+                barStyle={'light-content'} //TODO: Set this to 'dark-content' for light background
+                translucent={true}
+                hidden={Platform.OS === "ios"}
             />
-        </SafeAreaView>
+
+            <TopBar />
+
+            <TabBar navigation={navigation} />
+
+            <SafeAreaView >
+                <Text style={styles.header}>Payment :</Text>
+                <Button
+                    disabled={!loading}
+                    title="Checkout"
+                    onPress={openPaymentSheet}
+                />
+            </SafeAreaView>
+        </View>
     );
+
+
 }
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: 'white',
+        width: '100%',
+    },
+    header: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: "red",
+        marginVertical: 20,
+        paddingHorizontal: 16,
+    },
+    paymentContainer: {
+        padding: 16,
+        marginBottom: 16,
+        backgroundColor: '#f9f9f9',
+        borderRadius: 8,
+    },
+    toggleButton: {
+        color: '#007BFF',
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginTop: 10,
+    },
+    itemsContainer: {
+        paddingTop: 10,
+    },
+    itemContainer: {
+        paddingVertical: 8,
+        borderBottomWidth: 1,
+        borderBottomColor: '#e0e0e0',
+        flexDirection: "row",
+        justifyContent: 'space-between',
+        marginHorizontal: 16,
+    },
+    toggleButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginLeft: "90%",
+    },
+    state: {
+        flexDirection: "row",
+    }
+
+
+});
