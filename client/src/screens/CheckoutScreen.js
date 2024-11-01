@@ -1,28 +1,32 @@
+// CheckoutScreen.js
 import { useStripe } from "@stripe/stripe-react-native";
 import Constants from "expo-constants";
 import React, { useEffect, useState } from "react";
-import { Alert, Text, Button, SafeAreaView, StatusBar, Platform, StyleSheet, View } from "react-native";
-import TabBar from '../components/TabNavigation';
-import TopBar from '../components/TopBar';
+import { Alert, View, Text, Button, StyleSheet } from "react-native";
+import DbUtils from '../helpers/dbUtils';
 
-
-
-
-export default function Checkout({ navigation }) {
+export default function CheckoutScreen({ navigation }) {
     const { initPaymentSheet, presentPaymentSheet } = useStripe();
+    const [cartItems, setCartItems] = useState([]);
+    const [totalPrice, setTotalPrice] = useState(0);
     const [loading, setLoading] = useState(false);
-    const [paymentIntentId, setPaymentIntentId] = useState("");
+    const [dbUtils, setDbUtils] = useState(null);
 
-    const apiUrl = Constants.expoConfig?.extra?.apiUrl;
-    const stripePK = Constants.expoConfig?.extra?.stripePK;
+    const apiUrl = Constants.expoConfig.extra.apiUrl;
+    const userId = Constants.expoConfig.extra.USER_Id;
 
-    const userId = "cus_R0Lu680x5Dky69";
-    const items = [
-        {
-            "id": 1,
-            "amount": 2
-        }
-    ];
+    const openDatabase = async () => {
+        const utils = new DbUtils();
+        await utils.init();
+        setDbUtils(utils);
+        
+        const items = await utils.getCartItems();
+        setCartItems(items);
+        
+        const total = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        setTotalPrice(total);
+    };
+
 
     const fetchPaymentSheetParams = async () => {
         const response = await fetch(`${apiUrl}/payments/`, {
@@ -31,9 +35,14 @@ export default function Checkout({ navigation }) {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                "pending_items": items,
-                "customer_id": userId
-            })
+                pending_items: cartItems.map(item => {  
+                    return ({
+                        id: item.id,
+                        amount: item.quantity,
+                    });
+                }),
+                customer_id: userId,
+            }),
         });
 
         const { paymentIntent, ephemeralKey, customer } = await response.json();
@@ -53,7 +62,7 @@ export default function Checkout({ navigation }) {
         } = await fetchPaymentSheetParams();
 
         const { error } = await initPaymentSheet({
-            merchantDisplayName: "Example, Inc.",
+            merchantDisplayName: "Barcode Scanner GmbH",
             customerId: customer,
             customerEphemeralKeySecret: ephemeralKey,
             paymentIntentClientSecret: paymentIntent,
@@ -61,109 +70,88 @@ export default function Checkout({ navigation }) {
         });
 
         if (!error) {
-            setPaymentIntentId(paymentIntent);
             setLoading(true);
+        } else {
+            Alert.alert(`Error: ${error.message}`);
         }
     };
 
     const openPaymentSheet = async () => {
-        const { error } = await presentPaymentSheet();
-
-        if (error) {
-            Alert.alert(`Error code: ${error.code}`, error.message);
-        } else {
-            const paymentIntent = `pi_${paymentIntentId.split("_")[1]}`;
-            const response = await fetch(`${apiUrl}/payments/check/${paymentIntent}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    "customer_id": userId
-                })
-            });
-
-            if (response.status == 200) Alert.alert('Success', 'Your order is confirmed!');
+        try {
+            const { error } = await presentPaymentSheet();
+    
+            if (error) {
+                Alert.alert(`Error code: ${error.code}`, error.message);
+            } else {
+                Alert.alert('Success', 'Your order is confirmed!');
+                navigation.goBack();
+            }
+        } catch (err) {
+            console.error('Unexpected error during payment sheet presentation:', err);
+            Alert.alert('Error', 'An unexpected error occurred. Please try again later.');
         }
     };
 
+    const handleCheckout = async () => {
+        await openPaymentSheet();
+    };
+
     useEffect(() => {
-        initializePaymentSheet();
+        openDatabase();
     }, []);
+
+    useEffect(() => {
+        if (cartItems.length > 0) {
+            initializePaymentSheet();
+        }
+    }, [cartItems]);
 
     return (
         <View style={styles.container}>
-
-            <StatusBar
-                animated={true}
-                backgroundColor={"red"}
-                barStyle={'light-content'} //TODO: Set this to 'dark-content' for light background
-                translucent={true}
-                hidden={Platform.OS === "ios"}
-            />
-
-            <TopBar />
-
-            <TabBar navigation={navigation} />
-
-            <SafeAreaView >
-                <Text style={styles.header}>Payment :</Text>
-                <Button
-                    disabled={!loading}
-                    title="Checkout"
-                    onPress={openPaymentSheet}
-                />
-            </SafeAreaView>
+            <Text style={styles.title}>Checkout Summary</Text>
+            {cartItems.map(item => (
+                <View key={item.id} style={styles.item}>
+                    <Text style={styles.itemName}>{item.name}</Text>
+                    <Text style={styles.itemQuantity}>Quantity: {item.quantity}</Text>
+                    <Text style={styles.itemPrice}>{item.price}€</Text>
+                </View>
+            ))}
+            <Text style={styles.totalPrice}>Total Price: {totalPrice}€</Text>
+            <Button title="Confirm Order" disabled={!loading} onPress={handleCheckout} />
+            <Button title="Go Back" onPress={() => navigation.goBack()} />
         </View>
     );
-
-
 }
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: 'white',
-        width: '100%',
+        padding: 16,
+        paddingTop: 70,
     },
-    header: {
+    title: {
         fontSize: 24,
         fontWeight: 'bold',
-        color: "red",
-        marginVertical: 20,
-        paddingHorizontal: 16,
-    },
-    paymentContainer: {
-        padding: 16,
         marginBottom: 16,
-        backgroundColor: '#f9f9f9',
-        borderRadius: 8,
     },
-    toggleButton: {
-        color: '#007BFF',
-        fontSize: 16,
-        fontWeight: 'bold',
-        marginTop: 10,
-    },
-    itemsContainer: {
-        paddingTop: 10,
-    },
-    itemContainer: {
-        paddingVertical: 8,
+    item: {
+        marginBottom: 12,
         borderBottomWidth: 1,
-        borderBottomColor: '#e0e0e0',
-        flexDirection: "row",
-        justifyContent: 'space-between',
-        marginHorizontal: 16,
+        borderBottomColor: '#ccc',
+        paddingBottom: 8,
     },
-    toggleButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginLeft: "90%",
+    itemName: {
+        fontSize: 18,
     },
-    state: {
-        flexDirection: "row",
-    }
-
-
+    itemQuantity: {
+        fontSize: 16,
+    },
+    itemPrice: {
+        fontSize: 16,
+    },
+    totalPrice: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        marginTop: 20,
+    },
 });

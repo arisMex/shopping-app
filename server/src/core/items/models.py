@@ -10,6 +10,7 @@ class Item(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True)
     price = Column(Integer, default=0)
+    barcode = Column(String, index=True)
 
     purchased_items = relationship("PurchasedItem")
 

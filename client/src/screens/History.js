@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext} from 'react';
 import { Text, View, StyleSheet, StatusBar, Platform, TouchableOpacity, ScrollView } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
@@ -6,8 +6,14 @@ import TabBar from '../components/TabNavigation';
 import TopBar from '../components/TopBar';
 
 import DbUtils from '../helpers/dbUtils';
+import DbFetchers from '../helpers/dbFetchers';
+
+import { ThemeContext } from '../contexts/ThemeContext';
+
 
 export default function History({ navigation }) {
+  const { theme, toggleTheme } = useContext(ThemeContext);
+
 
   const [dbUtils, setDbUtils] = useState(null);
   const [history, setHistory] = useState([]);
@@ -17,7 +23,9 @@ export default function History({ navigation }) {
     const utils = new DbUtils();
     await utils.init();
     setDbUtils(utils);
-    const history_ = await utils.fetch_payments_by_customer_id("cus_R0Lu680x5Dky69");
+
+    const fetchers = new DbFetchers(); 
+    const history_ = await fetchers.fetch_payments_by_customer_id();
     setHistory(history_);
   };
 
@@ -33,7 +41,7 @@ export default function History({ navigation }) {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, theme.container]}>
       <StatusBar
         animated={true}
         backgroundColor={"red"}
@@ -50,7 +58,8 @@ export default function History({ navigation }) {
         <Text style={styles.header}>Historique :</Text>
         {
           history.map((payment) => (
-            <View key={payment.id} style={styles.paymentContainer} >
+            payment.is_checked &&
+            <View key={payment.id} style={[styles.paymentContainer, theme.itemCard]} >
               <View style={styles.state}>
                 <MaterialIcons
                   name={"payment"}
@@ -58,7 +67,7 @@ export default function History({ navigation }) {
                   color="red"
                   style={styles.toggleIcon} // Add style to adjust icon position
                 />
-                <Text>  Etat: {payment.is_checked ? "Validé" : "Non validé"} </Text>
+                <Text style={theme.text}>  Etat: {payment.is_checked ? "Validé" : "Non validé"} </Text>
               </View>
 
               {
@@ -70,7 +79,7 @@ export default function History({ navigation }) {
                       color="red"
                       style={styles.toggleIcon}
                     />
-                    <Text>  Date: {payment.checkout_date ? payment.checkout_date.split("T")[0] : "N/A"}</Text>
+                    <Text style={theme.text}>  Date: {payment.checkout_date ? payment.checkout_date.split("T")[0] : "N/A"}</Text>
                   </View>
                 )
               }
@@ -95,9 +104,9 @@ export default function History({ navigation }) {
                     {
                       payment.purchased_items.map((item, index) => (
                         <View key={index} style={styles.itemContainer} >
-                          <Text>{index + 1}.     {item.item.name} </Text>
-                          < Text > {item.item.price}€</Text>
-                          < Text > x {item.amount} </Text>
+                          <Text style={theme.text}>{index + 1}.     {item.item.name} </Text>
+                          < Text style={theme.greenText} > {item.item.price}€</Text>
+                          < Text  style={theme.text}> x {item.amount} </Text>
                         </View>
                       ))
                     }
@@ -117,7 +126,6 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    backgroundColor: 'white',
     width: '100%',
   },
   header: {
@@ -130,9 +138,8 @@ const styles = StyleSheet.create({
   paymentContainer: {
     padding: 16,
     marginBottom: 16,
-    backgroundColor: '#f9f9f9',
     borderRadius: 8,
-
+    margin: 16
   },
   toggleButton: {
     color: '#007BFF',

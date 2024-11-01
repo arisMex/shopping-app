@@ -46,6 +46,16 @@ def get_item(item_id: int) -> Optional[Item]:
             raise NotFoundException("Item not found")
 
         return item
+    
+def get_item_by_barcode(item_barcode: str) -> Optional[Item]:
+    with Session(engine) as db:
+        item: Optional[Item] = db.query(
+            Item).filter(Item.barcode == item_barcode).first()
+
+        if not item:
+            raise NotFoundException("Item not found")
+
+        return item    
 
 
 def get_items(offset: int, limit: int) -> List[Item]:

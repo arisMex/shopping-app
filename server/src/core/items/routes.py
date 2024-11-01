@@ -2,7 +2,7 @@ from typing import List
 
 from fastapi import APIRouter, Query
 
-from .controllers import add_item, delete_item, get_item, get_items
+from .controllers import add_item, delete_item, get_item, get_items, get_item_by_barcode
 from .schemas import AddItemSchema, ItemSchema
 
 item_router = APIRouter(
@@ -27,6 +27,12 @@ def read_item(
     item_id: int,
 ):
     return get_item(item_id)
+
+@item_router.get("/barcode/{item_barcode}", response_model=ItemSchema)
+def read_item_by_barcode(
+    item_barcode: str,
+):
+    return get_item_by_barcode(item_barcode)
 
 
 @item_router.get("/", response_model=List[ItemSchema])

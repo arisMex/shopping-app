@@ -1,25 +1,30 @@
-import React from "react";
+import React, {useContext} from "react";
 import { View, TouchableOpacity, Text, StyleSheet, Platform } from 'react-native';
 import { MaterialIcons } from "@expo/vector-icons";
+import { lightTheme, darkTheme } from '../styles/themes';
+import { ThemeContext } from '../contexts/ThemeContext';
+
 
 const TabBar = ({ navigation }) => {
+    const { theme, toggleTheme } = useContext(ThemeContext);
+
     return (
-        <View style={styles.tabBar}>
+        <View style={[styles.tabBar, theme.tabNavigationBarContainer]}>
             <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Home')}>
-                <MaterialIcons name="home" size={30} color="white" />
-                <Text style={styles.buttonText}>Home</Text>
+                <MaterialIcons name="home" size={30} color={theme.iconColor} />
+                <Text style={[styles.buttonText, {color: theme.iconColor}]}>Home</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Panier')}>
-                <MaterialIcons name="shopping-cart" size={30} color="white" />
-                <Text style={styles.buttonText}>Panier</Text>
+            <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('CartScreen')}>
+                <MaterialIcons name="shopping-cart" size={30} color={theme.iconColor} />
+                <Text style={[styles.buttonText, {color: theme.iconColor}]}>Panier</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Scan')}>
-                <MaterialIcons name="barcode-reader" size={30} color="white" />
-                <Text style={styles.buttonText}>Scan</Text>
+                <MaterialIcons name="barcode-reader" size={30} color={theme.iconColor} />
+                <Text style={[styles.buttonText, {color: theme.iconColor}]}>Scan</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('History')}>
-                <MaterialIcons name="history" size={30} color="white" />
-                <Text style={styles.buttonText}>Historique</Text>
+                <MaterialIcons name="history" size={30} color={theme.iconColor} />
+                <Text style={[styles.buttonText, {color: theme.iconColor}]}>Historique</Text>
             </TouchableOpacity>
         </View>
     );
@@ -31,9 +36,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-around', 
         alignItems: 'center',
         paddingVertical: Platform.OS === "ios" ? 15 : 10,
-        backgroundColor: "red",
         borderTopWidth: 1,
-        borderColor: "red",
         position: 'absolute',
         bottom: 0,
         left: 0,
