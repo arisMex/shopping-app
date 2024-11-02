@@ -295,6 +295,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     //backgroundColor: 'white',
     width: '100%',
+    marginTop: Platform.OS !== 'ios' ? 20 : 0,
   },
   input: {
     height: 40,

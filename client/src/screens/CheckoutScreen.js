@@ -2,7 +2,7 @@
 import { useStripe } from "@stripe/stripe-react-native";
 import Constants from "expo-constants";
 import React, { useEffect, useState } from "react";
-import { Alert, View, Text, Button, StyleSheet } from "react-native";
+import { Alert, View, Text, Button, StyleSheet , Platform} from "react-native";
 import DbUtils from '../helpers/dbUtils';
 
 export default function CheckoutScreen({ navigation }) {
@@ -128,6 +128,8 @@ const styles = StyleSheet.create({
         flex: 1,
         padding: 16,
         paddingTop: 70,
+        marginTop: Platform.OS !== 'ios' ? 20 : 0,
+
     },
     title: {
         fontSize: 24,

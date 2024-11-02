@@ -122,11 +122,12 @@ export default function History({ navigation }) {
 
 const styles = StyleSheet.create({
   myScrollView:{
-    maxHeight: "80%"
+    maxHeight: "80%",
   },
   container: {
     flex: 1,
     width: '100%',
+    marginTop: Platform.OS !== 'ios' ? 20 : 0,
   },
   header: {
     fontSize: 24,

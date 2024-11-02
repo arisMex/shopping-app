@@ -34,19 +34,19 @@ export default class DbUtils {
             }
         }
     };
-    
+
 
     getCartItems = async () => {
         if (this.db) {
-            const result = await this.db.getAllAsync('SELECT * FROM cart');    
+            const result = await this.db.getAllAsync('SELECT * FROM cart');
             return result;
-        }        
+        }
         return [];
     };
 
     addItem = async (id, name, price) => {
         if (this.db) {
-            const result = await this.db.getAllAsync('SELECT * FROM cart WHERE name = ?', [name]);            
+            const result = await this.db.getAllAsync('SELECT * FROM cart WHERE name = ?', [name]);
             if (result.length > 0) {
                 await this.db.runAsync('UPDATE cart SET quantity = quantity + 1 WHERE name = ?', [name]);
             } else {

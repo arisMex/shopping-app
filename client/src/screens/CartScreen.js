@@ -19,17 +19,15 @@ export default CartScreen = ({ navigation }) => {
 
     const openDatabase = async () => {
         const utils = new DbUtils();
-        await utils.init(); 
+        await utils.init();
         setDbUtils(utils);
-        
-        await utils.fillTest(); 
-        const items = await utils.getCartItems(); 
+        const items = await utils.getCartItems();
         setCartItems(items);
     };
 
     useEffect(() => {
         openDatabase();
-    }, []);//cartItems
+    }, [cartItems]);
 
     const increaseQuantity = async (id) => {
         if (dbUtils) {
@@ -66,7 +64,7 @@ export default CartScreen = ({ navigation }) => {
             </View>
         </View>
     );
-    
+
 
 
 
@@ -114,12 +112,14 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         width: '100%',
-        padding: 16,
+        marginTop: Platform.OS !== 'ios' ? 20 : 0,
+
     },
     content: {
         flex: 1,
         paddingHorizontal: 10,
-        paddingBottom: 100
+        paddingBottom: 100,
+        paddingHorizontal : 16
     },
     cartItem: {
         flexDirection: 'row',
@@ -148,12 +148,12 @@ const styles = StyleSheet.create({
     quantityControl: {
         flexDirection: 'row',
         alignItems: 'center',
-        width: 100,  
+        width: 100,
         justifyContent: 'space-between',
     },
     quantity: {
         fontSize: 18,
-        width: 30,  
+        width: 30,
         textAlign: 'center',
     },
     quantityButton: {
@@ -168,12 +168,12 @@ const styles = StyleSheet.create({
         paddingVertical: 12,
         paddingHorizontal: 20,
         borderRadius: 8,
-        elevation: 3, 
-        shadowColor: '#000', 
+        elevation: 3,
+        shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.3,
         shadowRadius: 3,
-        marginBottom : 10
+        marginBottom: 10
     },
     buttonText: {
         color: '#fff',
