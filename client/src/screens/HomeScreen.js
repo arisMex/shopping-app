@@ -75,7 +75,7 @@ export default function HomeScreen({ navigation }) {
                 <View style={styles.actionsContainer}>
                     <TouchableOpacity
                         style={styles.button}
-                        onPress={() => navigation.navigate('CodeBarScanner')}
+                        onPress={() => navigation.navigate('Scan')}
                     >
                         <MaterialIcons name="barcode-reader" size={20} color="white" style={styles.icon} />
                         <Text style={styles.buttonText}>Reprendre vos achats</Text>

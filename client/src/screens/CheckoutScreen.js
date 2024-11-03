@@ -117,7 +117,7 @@ export default function CheckoutScreen({ navigation }) {
             <TopBar />
             <TabBar navigation={navigation} />
             <ScrollView style={styles.myScrollView}>
-                <Text style={styles.title}>Checkout Summary</Text>
+                <Text style={styles.title}>Résumé de la commande</Text>
                 {cartItems.map((item, index) => (
                     <View key={item.item_id} style={[styles.itemContainer, theme.itemCard]}>
                         <Text style={theme.text}>{index + 1}. {item.name}</Text>
