@@ -1,14 +1,11 @@
 import React, { useState, useEffect, useContext} from 'react';
 import { Text, View, StyleSheet, StatusBar, Platform, TouchableOpacity, ScrollView } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-
 import TabBar from '../components/TabNavigation';
 import TopBar from '../components/TopBar';
-
 import DbUtils from '../helpers/dbUtils';
-import DbFetchers from '../helpers/dbFetchers';
-
 import { ThemeContext } from '../contexts/ThemeContext';
+import Constants from "expo-constants";
 
 
 export default function History({ navigation }) {
@@ -19,15 +16,40 @@ export default function History({ navigation }) {
   const [history, setHistory] = useState([]);
   const [expandedItems, setExpandedItems] = useState({}); // Track expanded state per payment ID
 
+  const apiUrl = Constants.expoConfig.extra.apiUrl;
+  const userId = Constants.expoConfig.extra.userId;
+
   const openDatabase = async () => {
     const utils = new DbUtils();
     await utils.init();
     setDbUtils(utils);
 
-    const fetchers = new DbFetchers(); 
-    const history_ = await fetchers.fetch_payments_by_customer_id();
+    const history_ = await fetchPaymentsByCustomerId();
     setHistory(history_);
   };
+
+  const fetchPaymentsByCustomerId = async () => {
+    try {
+        console.log("fetching payements for ", userId, apiUrl);
+        
+        const response = await fetch(`${apiUrl}/payments/${userId}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+        const result = await response.json();
+
+        return result;
+    } catch (error) {
+        console.log('Error fetching item details:', error);
+        return null;
+    }
+};
 
   useEffect(() => {
     openDatabase();

@@ -10,7 +10,6 @@ import { ThemeContext } from '../contexts/ThemeContext';
 
 
 import DbUtils from '../helpers/dbUtils';
-import DbFetchers from '../helpers/dbFetchers';
 //import { opacity } from 'react-native-reanimated/lib/typescript/reanimated2/Colors';
 
 export default function CodeBarScanner({ navigation }) {
@@ -31,15 +30,11 @@ export default function CodeBarScanner({ navigation }) {
   const isDisabled = number === '';
 
   const [dbUtils, setDbUtils] = useState(null);
-  const [dbFetchers, setDbFetchers] = useState(null);
 
   const openDatabase = async () => {
     const utils = new DbUtils();
     await utils.init();
     setDbUtils(utils);
-
-    const dbFetchersUtils = new DbFetchers();
-    setDbFetchers(dbFetchersUtils)
 
     const cartItems = await utils.getCartItems();
     setPanier(cartItems);
@@ -53,6 +48,29 @@ export default function CodeBarScanner({ navigation }) {
 
     setTotalPrice(total);
   };
+
+  const fetchItemDetails = async (item_barcode) => {
+    try {
+        //TODO const response = await fetch(`${apiUrl}/items/barcode/${item_barcode}`, {
+        const response = await fetch(`${apiUrl}/items/barcode/${item_barcode}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+        const { id, name, price, barcode } = await response.json();
+
+        return { id, name, price, barcode };
+    } catch (error) {
+        console.log('Error fetching item details:', error);
+        return null;
+    }
+};
 
   useEffect(() => {
     openDatabase();
@@ -78,7 +96,7 @@ export default function CodeBarScanner({ navigation }) {
     // Optional: add sound here if needed
 
     // Fetch item details from the server
-    const itemDetails = await dbFetchers.fetchItemDetails(item_barcode);
+    const itemDetails = await fetchItemDetails(item_barcode);
 
     if (itemDetails) {
       // Process item details if found
@@ -155,7 +173,7 @@ export default function CodeBarScanner({ navigation }) {
     try {
       // Récupérer les détails de l'élément à partir de la base de données
 
-      itemDetails = await dbFetchers.fetchItemDetails(item_barcode)
+      itemDetails = await fetchItemDetails(item_barcode)
 
       if (itemDetails) {
         setPanier(prevPanier => {
