@@ -26,6 +26,8 @@ export default function CheckoutScreen({ navigation }) {
         
         const items = await utils.getCartItems();
         setCartItems(items);
+        console.log(items);
+
         
         const total = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
         setTotalPrice(total);
@@ -34,7 +36,7 @@ export default function CheckoutScreen({ navigation }) {
     const fetchPaymentSheetParams = async () => {        
         const body = JSON.stringify({
             pending_items: cartItems.map(item => ({
-                id: item.id,
+                id: item.item_id,
                 amount: item.quantity,
             })),
             customer_id: userId,

@@ -4,6 +4,8 @@ import { BarCodeScanner } from 'expo-barcode-scanner';
 import TabBar from '../components/TabNavigation';
 import TopBar from '../components/TopBar';
 import { MaterialIcons } from '@expo/vector-icons';
+import Constants from "expo-constants";
+
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ThemeContext } from '../contexts/ThemeContext';
@@ -13,6 +15,9 @@ import DbUtils from '../helpers/dbUtils';
 //import { opacity } from 'react-native-reanimated/lib/typescript/reanimated2/Colors';
 
 export default function CodeBarScanner({ navigation }) {
+  const apiUrl = Constants.expoConfig.extra.apiUrl;
+  const userId = Constants.expoConfig.extra.userId;
+
   const [hasPermission, setHasPermission] = useState(null);
   const [scanned, setScanned] = useState(false);
   const [panier, setPanier] = useState([]);
@@ -51,7 +56,6 @@ export default function CodeBarScanner({ navigation }) {
 
   const fetchItemDetails = async (item_barcode) => {
     try {
-        //TODO const response = await fetch(`${apiUrl}/items/barcode/${item_barcode}`, {
         const response = await fetch(`${apiUrl}/items/barcode/${item_barcode}`, {
             method: 'GET',
             headers: {
