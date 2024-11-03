@@ -1,11 +1,16 @@
 import { useStripe } from "@stripe/stripe-react-native";
 import Constants from "expo-constants";
-import React, { useEffect, useState } from "react";
-import { Alert, View, Text, Button, StyleSheet, Platform } from "react-native";
+import React, { useEffect, useState, useContext } from "react";
+import { Alert, View, Text, StyleSheet, Platform, TouchableOpacity, ScrollView, StatusBar } from "react-native";
+import { MaterialIcons } from '@expo/vector-icons';
 import DbUtils from '../helpers/dbUtils';
+import TopBar from '../components/TopBar'; 
+import TabBar from '../components/TabNavigation'; 
+import { ThemeContext } from '../contexts/ThemeContext';
 
 export default function CheckoutScreen({ navigation }) {
     const { initPaymentSheet, presentPaymentSheet } = useStripe();
+    const { theme } = useContext(ThemeContext);
     const [cartItems, setCartItems] = useState([]);
     const [totalPrice, setTotalPrice] = useState(0);
     const [loading, setLoading] = useState(false);
@@ -101,51 +106,102 @@ export default function CheckoutScreen({ navigation }) {
     }, [cartItems]);
 
     return (
-        <View style={styles.container}>
-            <Text style={styles.title}>Checkout Summary</Text>
-            {cartItems.map(item => (
-                <View key={item.id} style={styles.item}>
-                    <Text style={styles.itemName}>{item.name}</Text>
-                    <Text style={styles.itemQuantity}>Quantity: {item.quantity}</Text>
-                    <Text style={styles.itemPrice}>{item.price}€</Text>
+        <View style={[styles.container, theme.container]}>
+            <StatusBar
+                animated={true}
+                backgroundColor={"red"}
+                barStyle={'light-content'} // TODO: Set this to 'dark-content' for light background
+                translucent={true}
+                hidden={Platform.OS === "ios"}
+            />
+            <TopBar />
+            <TabBar navigation={navigation} />
+            <ScrollView style={styles.myScrollView}>
+                <Text style={styles.title}>Checkout Summary</Text>
+                {cartItems.map((item, index) => (
+                    <View key={item.item_id} style={[styles.itemContainer, theme.itemCard]}>
+                        <Text style={theme.text}>{index + 1}. {item.name}</Text>
+                        <Text style={theme.greenText}>{item.price}€</Text>
+                        <Text style={theme.text}>x {item.quantity}</Text>
+                    </View>
+                ))}
+                <View style={styles.totalContainer}>
+                    <Text style={styles.totalPrice}>Total Price: {totalPrice}€</Text>
                 </View>
-            ))}
-            <Text style={styles.totalPrice}>Total Price: {totalPrice}€</Text>
-            <Button title="Confirm Order" disabled={!loading} onPress={openPaymentSheet} />
-            <Button title="Go Back" onPress={() => navigation.goBack()} />
+                <View style={styles.actionsContainer}>
+                    <TouchableOpacity
+                        style={styles.button}
+                        disabled={!loading}
+                        onPress={openPaymentSheet}
+                    >
+                        <MaterialIcons name="payment" size={20} color="white" />
+                        <Text style={styles.buttonText}>Confirm Order</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={styles.button}
+                        onPress={() => navigation.goBack()}
+                    >
+                        <MaterialIcons name="arrow-back" size={20} color="white" />
+                        <Text style={styles.buttonText}>Go Back</Text>
+                    </TouchableOpacity>
+                </View>
+            </ScrollView>
         </View>
     );
 }
 
 const styles = StyleSheet.create({
+    myScrollView: {
+        maxHeight: "80%",
+    },
     container: {
         flex: 1,
-        padding: 16,
-        paddingTop: Platform.OS === 'ios' ? 70 : 90,
+        width: '100%',
+        marginTop: Platform.OS !== 'ios' ? 20 : 0,
     },
     title: {
         fontSize: 24,
         fontWeight: 'bold',
+        color: "red",
+        marginVertical: 20,
+        paddingHorizontal: 16,
+    },
+    itemContainer: {
+        padding: 16,
         marginBottom: 16,
+        borderRadius: 8,
+        marginHorizontal: 16,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
     },
-    item: {
-        marginBottom: 12,
-        borderBottomWidth: 1,
-        borderBottomColor: '#ccc',
-        paddingBottom: 8,
-    },
-    itemName: {
-        fontSize: 18,
-    },
-    itemQuantity: {
-        fontSize: 16,
-    },
-    itemPrice: {
-        fontSize: 16,
+    totalContainer: {
+        marginVertical: 20,
+        paddingHorizontal: 16,
     },
     totalPrice: {
         fontSize: 20,
         fontWeight: 'bold',
-        marginTop: 20,
+        color: '#FF3131',
+    },
+    actionsContainer: {
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginVertical: 20,
+    },
+    button: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'red',
+        padding: 10,
+        borderRadius: 5,
+        marginVertical: 10,
+        width: '80%',
+    },
+    buttonText: {
+        color: 'white',
+        fontSize: 16,
+        marginLeft: 5,
     },
 });

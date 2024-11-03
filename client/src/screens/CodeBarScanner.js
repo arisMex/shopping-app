@@ -117,8 +117,6 @@ export default function CodeBarScanner({ navigation }) {
   // Fonction pour ajouter l'élément au panier
   const addItemToCart = async (itemDetails) => {
     try {
-
-      console.log(itemDetails.id, itemDetails.name,);
       
       await dbUtils.addItem(itemDetails.id, itemDetails.name, itemDetails.price, itemDetails.barcode);
 
