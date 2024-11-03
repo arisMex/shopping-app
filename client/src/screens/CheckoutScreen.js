@@ -1,8 +1,7 @@
-// CheckoutScreen.js
 import { useStripe } from "@stripe/stripe-react-native";
 import Constants from "expo-constants";
 import React, { useEffect, useState } from "react";
-import { Alert, View, Text, Button, StyleSheet , Platform} from "react-native";
+import { Alert, View, Text, Button, StyleSheet, Platform } from "react-native";
 import DbUtils from '../helpers/dbUtils';
 
 export default function CheckoutScreen({ navigation }) {
@@ -27,39 +26,37 @@ export default function CheckoutScreen({ navigation }) {
         setTotalPrice(total);
     };
 
-
     const fetchPaymentSheetParams = async () => {
-        const response = await fetch(`${apiUrl}/payments/`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                pending_items: cartItems.map(item => {  
-                    return ({
-                        id: item.id,
+        try {
+            const response = await fetch(`${apiUrl}/payments/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    pending_items: cartItems.map(item => ({
+                        id: item.item_id,
                         amount: item.quantity,
-                    });
+                    })),
+                    customer_id: userId,
                 }),
-                customer_id: userId,
-            }),
-        });
+            });
 
-        const { paymentIntent, ephemeralKey, customer } = await response.json();
+            if (!response.ok) throw new Error(`API request failed with status ${response.status}`);
 
-        return {
-            paymentIntent,
-            ephemeralKey,
-            customer,
-        };
+            const { paymentIntent, ephemeralKey, customer } = await response.json();
+            return { paymentIntent, ephemeralKey, customer };
+        } catch (error) {
+            console.error("Error fetching payment sheet params:", error);
+            Alert.alert("Error", "Failed to initialize payment. Please try again later.");
+            return {};
+        }
     };
 
     const initializePaymentSheet = async () => {
-        const {
-            paymentIntent,
-            ephemeralKey,
-            customer,
-        } = await fetchPaymentSheetParams();
+        const { paymentIntent, ephemeralKey, customer } = await fetchPaymentSheetParams();
+
+        if (!paymentIntent || !ephemeralKey || !customer) return;
 
         const { error } = await initPaymentSheet({
             merchantDisplayName: "Barcode Scanner GmbH",
@@ -69,17 +66,18 @@ export default function CheckoutScreen({ navigation }) {
             allowsDelayedPaymentMethods: false,
         });
 
-        if (!error) {
-            setLoading(true);
-        } else {
+        if (error) {
             Alert.alert(`Error: ${error.message}`);
+        } else {            
+            setLoading(true);
         }
     };
 
     const openPaymentSheet = async () => {
         try {
             const { error } = await presentPaymentSheet();
-    
+            console.log(error);
+            
             if (error) {
                 Alert.alert(`Error code: ${error.code}`, error.message);
             } else {
@@ -90,10 +88,6 @@ export default function CheckoutScreen({ navigation }) {
             console.error('Unexpected error during payment sheet presentation:', err);
             Alert.alert('Error', 'An unexpected error occurred. Please try again later.');
         }
-    };
-
-    const handleCheckout = async () => {
-        await openPaymentSheet();
     };
 
     useEffect(() => {
@@ -117,7 +111,7 @@ export default function CheckoutScreen({ navigation }) {
                 </View>
             ))}
             <Text style={styles.totalPrice}>Total Price: {totalPrice}€</Text>
-            <Button title="Confirm Order" disabled={!loading} onPress={handleCheckout} />
+            <Button title="Confirm Order" disabled={!loading} onPress={openPaymentSheet} />
             <Button title="Go Back" onPress={() => navigation.goBack()} />
         </View>
     );
@@ -127,9 +121,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         padding: 16,
-        paddingTop: 70,
-        marginTop: Platform.OS !== 'ios' ? 20 : 0,
-
+        paddingTop: Platform.OS === 'ios' ? 70 : 90,
     },
     title: {
         fontSize: 24,

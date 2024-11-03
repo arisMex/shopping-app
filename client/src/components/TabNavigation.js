@@ -10,7 +10,7 @@ const TabBar = ({ navigation }) => {
 
     return (
         <View style={[styles.tabBar, theme.tabNavigationBarContainer]}>
-            <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Home')}>
+            <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('HomeScreen')}>
                 <MaterialIcons name="home" size={30} color={theme.iconColor} />
                 <Text style={[styles.buttonText, {color: theme.iconColor}]}>Home</Text>
             </TouchableOpacity>

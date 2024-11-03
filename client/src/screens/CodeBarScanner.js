@@ -118,7 +118,10 @@ export default function CodeBarScanner({ navigation }) {
   const addItemToCart = async (itemDetails) => {
     try {
 
-      await dbUtils.addItem(itemDetails.name, itemDetails.price, itemDetails.barcode);
+      console.log(itemDetails.id, itemDetails.name,);
+      
+      await dbUtils.addItem(itemDetails.id, itemDetails.name, itemDetails.price, itemDetails.barcode);
+
 
       const cartItems = await dbUtils.getCartItems();
       // Mettre à jour le panier dans l'état
