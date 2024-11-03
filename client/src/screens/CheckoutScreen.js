@@ -17,7 +17,7 @@ export default function CheckoutScreen({ navigation }) {
     const [dbUtils, setDbUtils] = useState(null);
 
     const apiUrl = Constants.expoConfig.extra.apiUrl;
-    const userId = Constants.expoConfig.extra.USER_Id;
+    const userId = Constants.expoConfig.extra.userId;
 
     const openDatabase = async () => {
         const utils = new DbUtils();
@@ -31,20 +31,21 @@ export default function CheckoutScreen({ navigation }) {
         setTotalPrice(total);
     };
 
-    const fetchPaymentSheetParams = async () => {
+    const fetchPaymentSheetParams = async () => {        
+        const body = JSON.stringify({
+            pending_items: cartItems.map(item => ({
+                id: item.id,
+                amount: item.quantity,
+            })),
+            customer_id: userId,
+        });
         try {
             const response = await fetch(`${apiUrl}/payments/`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
-                    pending_items: cartItems.map(item => ({
-                        id: item.item_id,
-                        amount: item.quantity,
-                    })),
-                    customer_id: userId,
-                }),
+                body: body,
             });
 
             if (!response.ok) throw new Error(`API request failed with status ${response.status}`);
@@ -81,7 +82,6 @@ export default function CheckoutScreen({ navigation }) {
     const openPaymentSheet = async () => {
         try {
             const { error } = await presentPaymentSheet();
-            console.log(error);
             
             if (error) {
                 Alert.alert(`Error code: ${error.code}`, error.message);
@@ -116,10 +116,10 @@ export default function CheckoutScreen({ navigation }) {
             />
             <TopBar />
             <TabBar navigation={navigation} />
-            <ScrollView style={styles.myScrollView}>
+            <ScrollView style={styles.myScrollView}l>
                 <Text style={styles.title}>Résumé de la commande</Text>
                 {cartItems.map((item, index) => (
-                    <View key={item.item_id} style={[styles.itemContainer, theme.itemCard]}>
+                    <View key={item.id} style={[styles.itemContainer, theme.itemCard]}>
                         <Text style={theme.text}>{index + 1}. {item.name}</Text>
                         <Text style={theme.greenText}>{item.price}€</Text>
                         <Text style={theme.text}>x {item.quantity}</Text>

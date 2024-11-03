@@ -6,6 +6,6 @@ export default {
   extra: {
     apiUrl: process.env.API_URL,
     stripePK: process.env.STRIPE_PK,
-    USER_Id: process.env.USER_Id
+    userId: process.env.USER_ID
   },
 };
