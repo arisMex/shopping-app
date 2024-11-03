@@ -1,7 +1,7 @@
 
 import Constants from "expo-constants";
 const apiUrl = Constants.expoConfig?.extra?.apiUrl;
-const userID = Constants.expoConfig?.extra?.userId;
+const userID = Constants.expoConfig?.extra?.USER_ID;
 
 export default class DbFetchers {
     //get item details from server by its barcode
