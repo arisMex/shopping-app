@@ -58,7 +58,6 @@ export default function History({ navigation }) {
         <Text style={styles.header}>Historique :</Text>
         {
           history.map((payment) => (
-            payment.is_checked &&
             <View key={payment.id} style={[styles.paymentContainer, theme.itemCard]} >
               <View style={styles.state}>
                 <MaterialIcons

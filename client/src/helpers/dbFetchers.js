@@ -1,7 +1,7 @@
 
 import Constants from "expo-constants";
-const apiUrl = Constants.expoConfig?.extra?.apiUrl;
-const userID = Constants.expoConfig?.extra?.USER_ID;
+const apiUrl = Constants.expoConfig.extra.apiUrl;
+const userId = Constants.expoConfig.extra.userId;
 
 export default class DbFetchers {
     //get item details from server by its barcode
@@ -30,9 +30,9 @@ export default class DbFetchers {
 
     fetch_payments_by_customer_id = async () => {
         try {
-            console.log("fetching payements for ", userID, apiUrl);
+            console.log("fetching payements for ", userId, apiUrl);
             
-            const response = await fetch(`${apiUrl}/payments/${userID}`, {
+            const response = await fetch(`${apiUrl}/payments/${userId}`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
