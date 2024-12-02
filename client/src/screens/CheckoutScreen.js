@@ -4,8 +4,8 @@ import React, { useEffect, useState, useContext } from "react";
 import { Alert, View, Text, StyleSheet, Platform, TouchableOpacity, ScrollView, StatusBar } from "react-native";
 import { MaterialIcons } from '@expo/vector-icons';
 import DbUtils from '../helpers/dbUtils';
-import TopBar from '../components/TopBar'; 
-import TabBar from '../components/TabNavigation'; 
+import TopBar from '../components/TopBar';
+import TabBar from '../components/TabNavigation';
 import { ThemeContext } from '../contexts/ThemeContext';
 
 export default function CheckoutScreen({ navigation }) {
@@ -14,6 +14,7 @@ export default function CheckoutScreen({ navigation }) {
     const [cartItems, setCartItems] = useState([]);
     const [totalPrice, setTotalPrice] = useState(0);
     const [loading, setLoading] = useState(false);
+    const [paymentIntentId, setPaymentIntentId] = useState("");
     const [dbUtils, setDbUtils] = useState(null);
 
     const apiUrl = Constants.expoConfig.extra.apiUrl;
@@ -23,17 +24,15 @@ export default function CheckoutScreen({ navigation }) {
         const utils = new DbUtils();
         await utils.init();
         setDbUtils(utils);
-        
+
         const items = await utils.getCartItems();
         setCartItems(items);
-        console.log(items);
 
-        
         const total = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
         setTotalPrice(total);
     };
 
-    const fetchPaymentSheetParams = async () => {        
+    const fetchPaymentSheetParams = async () => {
         const body = JSON.stringify({
             pending_items: cartItems.map(item => ({
                 id: item.item_id,
@@ -72,11 +71,13 @@ export default function CheckoutScreen({ navigation }) {
             customerEphemeralKeySecret: ephemeralKey,
             paymentIntentClientSecret: paymentIntent,
             allowsDelayedPaymentMethods: false,
+            returnURL: "client://payment-completed",
         });
 
         if (error) {
             Alert.alert(`Error: ${error.message}`);
-        } else {            
+        } else {
+            setPaymentIntentId(paymentIntent);
             setLoading(true);
         }
     };
@@ -84,11 +85,23 @@ export default function CheckoutScreen({ navigation }) {
     const openPaymentSheet = async () => {
         try {
             const { error } = await presentPaymentSheet();
-            
+            console.log(error);
+
             if (error) {
                 Alert.alert(`Error code: ${error.code}`, error.message);
             } else {
                 Alert.alert('Success', 'Your order is confirmed!');
+                //TODO
+                // const paymentIntent = `pi_${paymentIntentId.split("_")[1]}`;
+                // const response = await fetch(`${apiUrl}/payments/check/${paymentIntent}`, {
+                //     method: 'POST',
+                //     headers: {
+                //         'Content-Type': 'application/json',
+                //     },
+                //     body: JSON.stringify({
+                //         "customer_id": userId
+                //     })
+                // });
                 navigation.goBack();
             }
         } catch (err) {
@@ -112,7 +125,7 @@ export default function CheckoutScreen({ navigation }) {
             <StatusBar
                 animated={true}
                 backgroundColor={"red"}
-                barStyle={'light-content'} // TODO: Set this to 'dark-content' for light background
+                barStyle={'light-content'}
                 translucent={true}
                 hidden={Platform.OS === "ios"}
             />
