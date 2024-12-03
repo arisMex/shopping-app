@@ -54,7 +54,7 @@ export default function CheckoutScreen({ navigation }) {
                 body: JSON.stringify({
                     pending_items: cartItems.map(item => ({
                         id: item.item_id,
-                        amount: item.quantity,
+                        amount: item.quantity * 100,
                     })),
                     customer_id: userId,
                 }),

@@ -9,6 +9,7 @@ export default class DbUtils {
     init = async () => {
         this.db = await SQLite.openDatabaseAsync("cart.db");
         await this.createTable();
+        //await this.fillTest();
     }
 
 
@@ -84,7 +85,7 @@ export default class DbUtils {
 
 
     fillTest = async () => {
-        return await this.addItem("banana", 2000, "0000");
+        return await this.addItem(1,"banana", 199, "11");
     }
 
     addItem = async (item_id, name, price, barcode) => {
