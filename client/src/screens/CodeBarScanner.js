@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { Text, View, StyleSheet, Button, TextInput, FlatList, Alert, StatusBar, Platform, TouchableOpacity } from 'react-native';
-import { BarCodeScanner } from 'expo-barcode-scanner';
+import { CameraView, Camera } from "expo-camera";
+
 import TabBar from '../components/TabNavigation';
 import TopBar from '../components/TopBar';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -12,7 +13,6 @@ import { ThemeContext } from '../contexts/ThemeContext';
 
 
 import DbUtils from '../helpers/dbUtils';
-//import { opacity } from 'react-native-reanimated/lib/typescript/reanimated2/Colors';
 
 export default function CodeBarScanner({ navigation }) {
   const apiUrl = Constants.expoConfig.extra.apiUrl;
@@ -56,90 +56,104 @@ export default function CodeBarScanner({ navigation }) {
 
   const fetchItemDetails = async (item_barcode) => {
     try {
-        const response = await fetch(`${apiUrl}/items/barcode/${item_barcode}`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-            }
-        });
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
+      const response = await fetch(`${apiUrl}/items/barcode/${item_barcode}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
         }
+      });
 
-        const { id, name, price, barcode } = await response.json();
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
 
-        return { id, name, price, barcode };
+      const { id, name, price, barcode } = await response.json();
+
+      return { id, name, price, barcode };
     } catch (error) {
-        console.log('Error fetching item details:', error);
-        return null;
+      console.log('Error fetching item details:', error);
+      return null;
     }
-};
+  };
 
   useEffect(() => {
     openDatabase();
   }, []);
+
   useEffect(() => {
-    (async () => {
-      const { status } = await BarCodeScanner.requestPermissionsAsync();
-      setHasPermission(status === 'granted');
-    })();
+    const getCameraPermissions = async () => {
+      const { status } = await Camera.requestCameraPermissionsAsync();
+      setHasPermission(status === "granted");
+    };
+
+    getCameraPermissions();
   }, []);
 
-  const sleep = (ms) => {
-    return new Promise(resolve => setTimeout(resolve, ms));
-  };
+  // const sleep = (ms) => {
+  //   return new Promise(resolve => setTimeout(resolve, ms));
+  // };
 
+
+  let isScanning = false; // Variable locale pour éviter les appels concurrents
 
   const handleBarCodeScanned = async ({ type, data }) => {
-    const item_barcode = data; // Use 'const' for item_barcode
-    console.log(data);
-
-    setScanned(true);
-
-    // Optional: add sound here if needed
-
-    // Fetch item details from the server
-    const itemDetails = await fetchItemDetails(item_barcode);
-
-    if (itemDetails) {
-      // Process item details if found
-      setPanier(prevPanier => {
-        const existingItemIndex = prevPanier.findIndex(item => item.barcode === itemDetails.barcode);
-        if (existingItemIndex !== -1) {
-          // If item exists, increment the quantity
-          const updatedPanier = [...prevPanier];
-          updatedPanier[existingItemIndex].quantity += 1;
-          addItemToCart(itemDetails);
-          return updatedPanier;
-        } else {
-          addItemToCart(itemDetails);
-          return [...prevPanier, { ...itemDetails, quantity: 1 }];
-        }
-      });
-
-      // Update total price
-      setTotalPrice(totalPrice + itemDetails.price);
-    } else {
-      // Handle error case when item is not found
-      setError({
-        error: true,
-        text: `Élément non enregistré : ${item_barcode}`
-      });
-      console.log('Élément non trouvé pour le code-barres:', item_barcode);
+    if (isScanning || scanned) {
+      return;
     }
-
-    await sleep(1500);
+  
+    isScanning = true; // Verrou local
+    setScanned(true);
+  
+    console.log(`Code barre scanné! Type: ${type} Data: ${data}`);
+  
+    try {
+      const item_barcode = data;
+  
+      // Fetch item details depuis le serveur
+      const itemDetails = await fetchItemDetails(item_barcode);
+      
+      if (itemDetails) {
+        // Traitement des détails de l'élément
+        setPanier(prevPanier => {
+          const existingItemIndex = prevPanier.findIndex(item => item.barcode === itemDetails.barcode);
+          if (existingItemIndex !== -1) {
+            const updatedPanier = [...prevPanier];
+            updatedPanier[existingItemIndex].quantity += 1;
+            addItemToCart(itemDetails);
+            return updatedPanier;
+          } else {
+            addItemToCart(itemDetails);
+            return [...prevPanier, { ...itemDetails, quantity: 1 }];
+          }
+        });
+        setTotalPrice(prevPrice => prevPrice + itemDetails.price);
+      } else {
+        setError({
+          error: true,
+          text: `Élément non enregistré : ${item_barcode}`,
+        });
+        console.log('Élément non trouvé pour le code-barres:', item_barcode);
+      }
+    } catch (error) {
+      console.error("Erreur lors du scan :", error);
+    }
+  
+    await sleep(1500); // Période de cooldown
+    isScanning = false; // Débloque les scans
     setScanned(false);
     setError({ error: false, text: "" });
     setOpacityColor("green");
   };
-
+  
+  // Fonction sleep
+  const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+  
+  
 
   // Fonction pour ajouter l'élément au panier
   const addItemToCart = async (itemDetails) => {
     try {
-      
+
       await dbUtils.addItem(itemDetails.id, itemDetails.name, itemDetails.price, itemDetails.barcode);
 
 
@@ -150,8 +164,6 @@ export default function CodeBarScanner({ navigation }) {
       console.error("Error adding item to cart", error);
     }
   };
-
-
 
   const removeItemFromCart = async (barcode) => {
     try {
@@ -210,7 +222,7 @@ export default function CodeBarScanner({ navigation }) {
     <View style={[styles.container, theme.container]}>
       <StatusBar
         animated={true}
-        backgroundColor={"red"}
+        backgroundColor={theme.topBarColor}
         barStyle={'light-content'} //TODO dark/light
         translucent={true}
         hidden={Platform.OS === "ios"}
@@ -218,22 +230,30 @@ export default function CodeBarScanner({ navigation }) {
 
       <TopBar />
 
-      <BarCodeScanner
-        onBarCodeScanned={scanned ? undefined : handleBarCodeScanned}
+      <CameraView
+
+        barcodeSettings={{
+          interval: 2000, // scan once per 2 seconds
+        }}
+        onBarcodeScanned={scanned ? undefined : (barcode) => {
+          handleBarCodeScanned(barcode);
+          setScanned(true)
+        }}
         style={[
           styles.camera,
           {
             opacity: scanned ? 0.5 : 1,
-            backgroundColor: scanned ? 'green' : 'transparent' //opacityColor
+            backgroundColor: scanned ? 'green' : 'transparent', //opacityColor
           }
         ]}
       />
+
       {error.error && (
         <View style={styles.scanError}>
           <MaterialIcons
             name="warning"
             size={20}
-            color={isDisabled ? 'gray' : 'red'} 
+            color={isDisabled ? 'gray' : 'red'}
             style={styles.icon}
           />
           <Text style={styles.errorText}>
@@ -278,11 +298,11 @@ export default function CodeBarScanner({ navigation }) {
         data={panier}
         renderItem={({ item, index }) => (
           <View style={styles.itemContainer}>
-            <Text style={[styles.itemIndex, {color: theme.itemTitelColor}]}>
+            <Text style={[styles.itemIndex, { color: theme.itemTitelColor }]}>
               {index + 1}.
             </Text>
             <View style={styles.itemDetails}>
-              <Text style={[styles.itemName, {color: theme.itemTitelColor}]}>
+              <Text style={[styles.itemName, { color: theme.itemTitelColor }]}>
                 {item.name}
               </Text>
               <Text style={styles.itemPrice}>

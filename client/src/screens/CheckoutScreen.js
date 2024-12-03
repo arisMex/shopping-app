@@ -1,4 +1,4 @@
-import { useStripe } from "@stripe/stripe-react-native";
+import { useStripe, StripeProvider } from "@stripe/stripe-react-native";
 import Constants from "expo-constants";
 import React, { useEffect, useState, useContext } from "react";
 import { Alert, View, Text, StyleSheet, Platform, TouchableOpacity, ScrollView, StatusBar } from "react-native";
@@ -10,49 +10,59 @@ import { ThemeContext } from '../contexts/ThemeContext';
 
 export default function CheckoutScreen({ navigation }) {
     const { initPaymentSheet, presentPaymentSheet } = useStripe();
+    const [paymentIntentId, setPaymentIntentId] = useState("");
+
+
     const { theme } = useContext(ThemeContext);
+
     const [cartItems, setCartItems] = useState([]);
     const [totalPrice, setTotalPrice] = useState(0);
-    const [loading, setLoading] = useState(false);
-    const [paymentIntentId, setPaymentIntentId] = useState("");
     const [dbUtils, setDbUtils] = useState(null);
+    const [loading, setLoading] = useState(false);
 
     const apiUrl = Constants.expoConfig.extra.apiUrl;
     const userId = Constants.expoConfig.extra.userId;
+    const publishableKey = Constants.expoConfig.extra.stripePK;
 
+    // Initialisation de la base de données et récupération des items du panier
     const openDatabase = async () => {
-        const utils = new DbUtils();
-        await utils.init();
-        setDbUtils(utils);
+        try {
+            const utils = new DbUtils();
+            setDbUtils(utils);
+            await utils.init();
 
-        const items = await utils.getCartItems();
-        setCartItems(items);
+            const items = await utils.getCartItems();
+            setCartItems(items);
 
-        const total = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-        setTotalPrice(total);
+            const total = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            setTotalPrice(total);
+        } catch (error) {
+            console.error("Database error:", error);
+            Alert.alert("Error", "Failed to load cart items.");
+        }
     };
 
+    // Récupération des paramètres nécessaires pour Stripe
     const fetchPaymentSheetParams = async () => {
-        const body = JSON.stringify({
-            pending_items: cartItems.map(item => ({
-                id: item.item_id,
-                amount: item.quantity,
-            })),
-            customer_id: userId,
-        });
         try {
             const response = await fetch(`${apiUrl}/payments/`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${publishableKey}`,
                 },
-                body: body,
+                body: JSON.stringify({
+                    pending_items: cartItems.map(item => ({
+                        id: item.item_id,
+                        amount: item.quantity,
+                    })),
+                    customer_id: userId,
+                }),
             });
 
             if (!response.ok) throw new Error(`API request failed with status ${response.status}`);
 
-            const { paymentIntent, ephemeralKey, customer } = await response.json();
-            return { paymentIntent, ephemeralKey, customer };
+            return await response.json();
         } catch (error) {
             console.error("Error fetching payment sheet params:", error);
             Alert.alert("Error", "Failed to initialize payment. Please try again later.");
@@ -60,6 +70,7 @@ export default function CheckoutScreen({ navigation }) {
         }
     };
 
+    // Initialisation de la feuille de paiement Stripe
     const initializePaymentSheet = async () => {
         const { paymentIntent, ephemeralKey, customer } = await fetchPaymentSheetParams();
 
@@ -71,42 +82,43 @@ export default function CheckoutScreen({ navigation }) {
             customerEphemeralKeySecret: ephemeralKey,
             paymentIntentClientSecret: paymentIntent,
             allowsDelayedPaymentMethods: false,
-            returnURL: "client://payment-completed",
         });
 
         if (error) {
-            Alert.alert(`Error: ${error.message}`);
+            Alert.alert("Error", error.message);
         } else {
-            setPaymentIntentId(paymentIntent);
             setLoading(true);
+            setPaymentIntentId(paymentIntent)
         }
     };
 
+    // Ouverture de la feuille de paiement Stripe
     const openPaymentSheet = async () => {
         try {
             const { error } = await presentPaymentSheet();
-            console.log(error);
 
             if (error) {
                 Alert.alert(`Error code: ${error.code}`, error.message);
             } else {
-                Alert.alert('Success', 'Your order is confirmed!');
-                //TODO
-                // const paymentIntent = `pi_${paymentIntentId.split("_")[1]}`;
-                // const response = await fetch(`${apiUrl}/payments/check/${paymentIntent}`, {
-                //     method: 'POST',
-                //     headers: {
-                //         'Content-Type': 'application/json',
-                //     },
-                //     body: JSON.stringify({
-                //         "customer_id": userId
-                //     })
-                // });
+                const paymentIntent = `pi_${paymentIntentId.split("_")[1]}`;
+                const response = await fetch(`${apiUrl}/payments/check/${paymentIntent}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        "customer_id": userId
+                    })
+                });
+
+                if (response.status == 200) Alert.alert('Success', 'Your order is confirmed!');
+                await dbUtils.emptyCart();
+                Alert.alert("Success", "Your order is confirmed!");
                 navigation.goBack();
             }
         } catch (err) {
-            console.error('Unexpected error during payment sheet presentation:', err);
-            Alert.alert('Error', 'An unexpected error occurred. Please try again later.');
+            console.error("Unexpected error during payment:", err);
+            Alert.alert("Error", "An unexpected error occurred. Please try again later.");
         }
     };
 
@@ -121,47 +133,53 @@ export default function CheckoutScreen({ navigation }) {
     }, [cartItems]);
 
     return (
-        <View style={[styles.container, theme.container]}>
-            <StatusBar
-                animated={true}
-                backgroundColor={"red"}
-                barStyle={'light-content'}
-                translucent={true}
-                hidden={Platform.OS === "ios"}
-            />
-            <TopBar />
-            <TabBar navigation={navigation} />
-            <ScrollView style={styles.myScrollView}l>
-                <Text style={styles.title}>Résumé de la commande</Text>
-                {cartItems.map((item, index) => (
-                    <View key={item.id} style={[styles.itemContainer, theme.itemCard]}>
-                        <Text style={theme.text}>{index + 1}. {item.name}</Text>
-                        <Text style={theme.greenText}>{item.price}€</Text>
-                        <Text style={theme.text}>x {item.quantity}</Text>
+        <StripeProvider
+            publishableKey={publishableKey}
+            merchantIdentifier="merchant.identifier" // requis pour Apple Pay
+            urlScheme="your-url-scheme" // requis pour 3D Secure et redirections bancaires
+        >
+            <View style={[styles.container, theme.container]}>
+                <StatusBar
+                    animated={true}
+                    backgroundColor={"red"}
+                    barStyle="light-content"
+                    translucent={true}
+                    hidden={Platform.OS === "ios"}
+                />
+                <TopBar />
+                <TabBar navigation={navigation} />
+                <ScrollView style={styles.myScrollView}>
+                    <Text style={styles.title}>Résumé de la commande</Text>
+                    {cartItems.map((item, index) => (
+                        <View key={item.id} style={[styles.itemContainer, theme.itemCard]}>
+                            <Text style={theme.text}>{index + 1}. {item.name}</Text>
+                            <Text style={theme.greenText}>{item.price}€</Text>
+                            <Text style={theme.text}>x {item.quantity}</Text>
+                        </View>
+                    ))}
+                    <View style={styles.totalContainer}>
+                        <Text style={styles.totalPrice}>Total Price: {totalPrice}€</Text>
                     </View>
-                ))}
-                <View style={styles.totalContainer}>
-                    <Text style={styles.totalPrice}>Total Price: {totalPrice}€</Text>
-                </View>
-                <View style={styles.actionsContainer}>
-                    <TouchableOpacity
-                        style={styles.button}
-                        disabled={!loading}
-                        onPress={openPaymentSheet}
-                    >
-                        <MaterialIcons name="payment" size={20} color="white" />
-                        <Text style={styles.buttonText}>Confirm Order</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={styles.button}
-                        onPress={() => navigation.goBack()}
-                    >
-                        <MaterialIcons name="arrow-back" size={20} color="white" />
-                        <Text style={styles.buttonText}>Go Back</Text>
-                    </TouchableOpacity>
-                </View>
-            </ScrollView>
-        </View>
+                    <View style={styles.actionsContainer}>
+                        <TouchableOpacity
+                            style={styles.button}
+                            disabled={!loading}
+                            onPress={openPaymentSheet}
+                        >
+                            <MaterialIcons name="payment" size={20} color="white" />
+                            <Text style={styles.buttonText}>Confirm Order</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.button}
+                            onPress={() => navigation.goBack()}
+                        >
+                            <MaterialIcons name="arrow-back" size={20} color="white" />
+                            <Text style={styles.buttonText}>Go Back</Text>
+                        </TouchableOpacity>
+                    </View>
+                </ScrollView>
+            </View>
+        </StripeProvider>
     );
 }
 
@@ -171,12 +189,12 @@ const styles = StyleSheet.create({
     },
     container: {
         flex: 1,
-        width: '100%',
-        marginTop: Platform.OS !== 'ios' ? 20 : 0,
+        width: "100%",
+        marginTop: Platform.OS !== "ios" ? 20 : 0,
     },
     title: {
         fontSize: 24,
-        fontWeight: 'bold',
+        fontWeight: "bold",
         color: "red",
         marginVertical: 20,
         paddingHorizontal: 16,
@@ -186,9 +204,9 @@ const styles = StyleSheet.create({
         marginBottom: 16,
         borderRadius: 8,
         marginHorizontal: 16,
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
     },
     totalContainer: {
         marginVertical: 20,
@@ -196,26 +214,26 @@ const styles = StyleSheet.create({
     },
     totalPrice: {
         fontSize: 20,
-        fontWeight: 'bold',
-        color: '#FF3131',
+        fontWeight: "bold",
+        color: "#FF3131",
     },
     actionsContainer: {
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
         marginVertical: 20,
     },
     button: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: 'red',
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "red",
         padding: 10,
         borderRadius: 5,
         marginVertical: 10,
-        width: '80%',
+        width: "80%",
     },
     buttonText: {
-        color: 'white',
+        color: "white",
         fontSize: 16,
         marginLeft: 5,
     },

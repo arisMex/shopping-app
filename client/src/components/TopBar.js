@@ -1,5 +1,5 @@
 import React, { useContext } from "react";
-import { View, Image, StyleSheet, Text, Button, TouchableOpacity } from 'react-native';
+import { View, Image, StyleSheet, Text, Button, TouchableOpacity,StatusBar, Platform } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 
 import { ThemeContext } from '../contexts/ThemeContext';
@@ -8,15 +8,16 @@ const TopBar = () => {
     const { theme, toggleTheme, themeName } = useContext(ThemeContext);
     return (
         <View style={[styles.topBar, theme.topBarTheme]}>
+
             <Image source={require('../../assets/logo.jpg')} style={styles.logo} />
             <TouchableOpacity style={[styles.button, { marginRight: 35, justifyContent: "center", alignItems: 'center' }]} onPress={toggleTheme}>
                 {themeName === 'light' ? (
-                    <MaterialIcons name="wb-sunny" size={32} color="#FFD700" /> // Sun icon
+                    <MaterialIcons name="wb-sunny" size={32} color="white" /> // Sun icon
 
                 ) : (
                     <MaterialIcons name="brightness-2" size={32} color="gray" /> // Moon icon
                 )}
-                <Text style={[styles.buttonText, { color: themeName === 'light' ? '#FFD700' : 'gray', fontWeight: "bold" }]}>
+                <Text style={[styles.buttonText, { color: themeName === 'light' ? 'white' : 'gray', fontWeight: "bold" }]}>
                     {themeName === 'dark' ? 'Dark Mode' : 'Light Mode'}
                 </Text>
             </TouchableOpacity>

@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useContext} from 'react';
-import { Text, View, StyleSheet, StatusBar, Platform, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
+import { Text, View, StyleSheet, StatusBar, Platform, Image, TouchableOpacity, ScrollView } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native'; // Import du hook
 import { MaterialIcons } from '@expo/vector-icons';
 import TabBar from '../components/TabNavigation';
 import TopBar from '../components/TopBar';
@@ -30,31 +31,32 @@ export default function History({ navigation }) {
 
   const fetchPaymentsByCustomerId = async () => {
     try {
-        console.log("fetching payements for ", userId, apiUrl);
-        
-        const response = await fetch(`${apiUrl}/payments/${userId}`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-            }
-        });
-        if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
+      console.log("fetching payements for ", userId, apiUrl);
+
+      const response = await fetch(`${apiUrl}/payments/${userId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
         }
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
 
-        const result = await response.json();
+      const result = await response.json();
 
-        return result;
+      return result;
     } catch (error) {
-        console.log('Error fetching item details:', error);
-        return null;
+      console.log('Error fetching item details:', error);
+      return null;
     }
-};
+  };
 
-  useEffect(() => {
-    openDatabase();
-  }, []);
-
+  useFocusEffect(
+    useCallback(() => {
+      openDatabase(); // Appeler la fonction openDatabase
+    }, [])
+  );
   const toggleExpand = (id) => {
     setExpandedItems((prev) => ({
       ...prev,
@@ -66,7 +68,7 @@ export default function History({ navigation }) {
     <View style={[styles.container, theme.container]}>
       <StatusBar
         animated={true}
-        backgroundColor={"red"}
+        backgroundColor={theme.topBarColor}
         barStyle={'light-content'} //TODO: Set this to 'dark-content' for light background
         translucent={true}
         hidden={Platform.OS === "ios"}
@@ -78,6 +80,11 @@ export default function History({ navigation }) {
 
       <ScrollView style={styles.myScrollView}>
         <Text style={styles.header}>Historique :</Text>
+        {history.length == 0 && <Image
+          source={require("./../../assets/empty_cart.png")}
+          style={styles.image}
+          resizeMode="cover"
+        />}
         {
           history.map((payment) => (
             payment.is_checked &&
@@ -128,7 +135,7 @@ export default function History({ navigation }) {
                         <View key={index} style={styles.itemContainer} >
                           <Text style={theme.text}>{index + 1}.     {item.item.name} </Text>
                           < Text style={theme.greenText} > {item.item.price}€</Text>
-                          < Text  style={theme.text}> x {item.amount} </Text>
+                          < Text style={theme.text}> x {item.amount} </Text>
                         </View>
                       ))
                     }
@@ -143,7 +150,7 @@ export default function History({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  myScrollView:{
+  myScrollView: {
     maxHeight: "80%",
   },
   container: {

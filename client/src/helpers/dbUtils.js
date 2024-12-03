@@ -40,18 +40,20 @@ export default class DbUtils {
     };
 
     resetTable = async () => {
+
         if (this.db) {
             // Check if the table exists
+
             const result = await this.db.getAllAsync(`
                 SELECT name FROM sqlite_master WHERE type='table' AND name='cart';
             `);
-    
+
             // If the table exists, drop it
             if (result.length > 0) {
                 await this.db.execAsync(`DROP TABLE IF EXISTS cart;`);
                 console.log("Table 'cart' supprimée avec succès.");
             }
-    
+
             // Recreate the table
             await this.db.execAsync(`
                 CREATE TABLE cart (
@@ -68,7 +70,7 @@ export default class DbUtils {
             console.log("Database is not initialized.");
         }
     };
-    
+
 
 
     getCartItems = async () => {
@@ -129,6 +131,15 @@ export default class DbUtils {
             await this.db.runAsync('DELETE FROM cart WHERE id = ?', [id]);
         }
     };
+
+    emptyCart = async () => {
+        try {
+            await this.db.runAsync('DELETE FROM cart'); 
+        } catch (e) {
+            console.error("Error clearing the cart:", e);
+        }
+    };
+    
 
 }
 

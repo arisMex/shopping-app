@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useContext } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Button, StatusBar, Platform } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, Image, StyleSheet, Button, StatusBar, Platform } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 
 import DbUtils from '../helpers/dbUtils';
@@ -73,7 +73,7 @@ export default CartScreen = ({ navigation }) => {
         <View style={[styles.container, theme.container]}>
             <StatusBar
                 animated={true}
-                backgroundColor={"red"}
+                backgroundColor={theme.topBarColor}
                 barStyle={'light-content'}
                 translucent={true}
                 hidden={Platform.OS === "ios"}
@@ -89,9 +89,20 @@ export default CartScreen = ({ navigation }) => {
                     keyExtractor={(item) => item.id.toString()}
                     renderItem={renderItem}
                 />
+                {cartItems.length == 0 &&
+                    <Image
+                        source={require("./../../assets/empty_cart.png")}
+                        style={styles.image}
+                        resizeMode="cover"
+                    />}
                 <TouchableOpacity
-                    style={[styles.button, theme.goCheckoutButton]}
+                    style={[
+                        styles.button,
+                        theme.goCheckoutButton,
+                        cartItems.length == 0 && { backgroundColor: 'gray' }
+                    ]}
                     onPress={() => navigation.navigate('CheckoutScreen')}
+                    disabled={cartItems.length == 0}
                 >
                     <MaterialIcons name="shopping-cart" size={24} color="#fff" style={styles.icon} />
                     <Text style={styles.buttonText}>Passer au paiement</Text>
@@ -119,7 +130,15 @@ const styles = StyleSheet.create({
         flex: 1,
         paddingHorizontal: 10,
         paddingBottom: 100,
-        paddingHorizontal : 16
+        paddingHorizontal: 16,
+        position: "relative"
+    },
+    image: {
+        position: 'absolute',
+        top: "30%",
+        left: "15%",
+        height: 300,
+        width: 300
     },
     cartItem: {
         flexDirection: 'row',
@@ -131,7 +150,7 @@ const styles = StyleSheet.create({
         color: "red"
     },
     itemInfo: {
-        flex: 3,  // Allow more space for the item name
+        flex: 3,
     },
     itemName: {
         fontSize: 18,

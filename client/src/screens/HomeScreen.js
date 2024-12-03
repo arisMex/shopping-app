@@ -43,7 +43,7 @@ export default function HomeScreen({ navigation }) {
         <View style={[styles.container, theme.container]}>
             <StatusBar
                 animated={true}
-                backgroundColor={"red"}
+                backgroundColor={theme.topBarColor}
                 barStyle={'light-content'} //TODO: Set this to 'dark-content' for light background
                 translucent={true}
                 hidden={Platform.OS === "ios"}

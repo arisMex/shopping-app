@@ -18,6 +18,7 @@ export const lightTheme = {
     topBarTheme: {
         backgroundColor: "red"
     },
+    topBarColor: "red",
     tabNavigationBarContainer: {
         backgroundColor: "red",
         borderBlockColor: "red",
@@ -53,6 +54,8 @@ export const darkTheme = {
     topBarTheme: {
         backgroundColor: "black"
     },
+    topBarColor: "black",
+
     tabNavigationBarContainer: {
         backgroundColor: "black",
         borderBlockColor: "#ff0000",
@@ -67,7 +70,7 @@ export const darkTheme = {
 
     //Cart
     goCheckoutButton: {
-        backgroundColor: 'gray',
+        backgroundColor: 'red',
     },
 
 };
