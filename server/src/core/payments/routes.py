@@ -78,7 +78,7 @@ def create_sheet(
     if len(items) != len(payment_sheet.pending_items):
         raise NotFoundException(detail="Item not found.")
 
-    price: int = sum([pending_items[i.id] * i.price for i in items])
+    price: int = sum([pending_items[i.id] * i.price for i in items]) * 100
 
     payment_intent = stripe.PaymentIntent.create(
         amount=price,
@@ -149,7 +149,7 @@ def check_sheet_status_and_get_purchased_items(
         PurchasedItem.payment_id == payment.id
     ).all()
 
-    price: int = sum([pi.amount * pi.item.price for pi in purchased_items])
+    price: int = sum([pi.amount * pi.item.price for pi in purchased_items]) * 100
 
     # validation of the price against the amount paid
     if not price == amount:

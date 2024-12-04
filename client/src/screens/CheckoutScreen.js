@@ -7,6 +7,7 @@ import DbUtils from '../helpers/dbUtils';
 import TopBar from '../components/TopBar';
 import TabBar from '../components/TabNavigation';
 import { ThemeContext } from '../contexts/ThemeContext';
+import { checkPayment, fetchPaymentSheetParams } from "../services/paymentService";
 
 export default function CheckoutScreen({ navigation }) {
     const { initPaymentSheet, presentPaymentSheet } = useStripe();
@@ -20,8 +21,6 @@ export default function CheckoutScreen({ navigation }) {
     const [dbUtils, setDbUtils] = useState(null);
     const [loading, setLoading] = useState(false);
 
-    const apiUrl = Constants.expoConfig.extra.apiUrl;
-    const userId = Constants.expoConfig.extra.userId;
     const publishableKey = Constants.expoConfig.extra.stripePK;
 
     // Initialisation de la base de données et récupération des items du panier
@@ -42,37 +41,10 @@ export default function CheckoutScreen({ navigation }) {
         }
     };
 
-    // Récupération des paramètres nécessaires pour Stripe
-    const fetchPaymentSheetParams = async () => {
-        try {
-            const response = await fetch(`${apiUrl}/payments/`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${publishableKey}`,
-                },
-                body: JSON.stringify({
-                    pending_items: cartItems.map(item => ({
-                        id: item.item_id,
-                        amount: item.quantity * 100,
-                    })),
-                    customer_id: userId,
-                }),
-            });
-
-            if (!response.ok) throw new Error(`API request failed with status ${response.status}`);
-
-            return await response.json();
-        } catch (error) {
-            console.error("Error fetching payment sheet params:", error);
-            Alert.alert("Error", "Failed to initialize payment. Please try again later.");
-            return {};
-        }
-    };
 
     // Initialisation de la feuille de paiement Stripe
     const initializePaymentSheet = async () => {
-        const { paymentIntent, ephemeralKey, customer } = await fetchPaymentSheetParams();
+        const { paymentIntent, ephemeralKey, customer } = await fetchPaymentSheetParams(cartItems);
 
         if (!paymentIntent || !ephemeralKey || !customer) return;
 
@@ -100,17 +72,7 @@ export default function CheckoutScreen({ navigation }) {
             if (error) {
                 Alert.alert(`Error code: ${error.code}`, error.message);
             } else {
-                const paymentIntent = `pi_${paymentIntentId.split("_")[1]}`;
-                const response = await fetch(`${apiUrl}/payments/check/${paymentIntent}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        "customer_id": userId
-                    })
-                });
-
+                const response = checkPayment(paymentIntentId);
                 if (response.status == 200) Alert.alert('Success', 'Your order is confirmed!');
                 await dbUtils.emptyCart();
                 Alert.alert("Success", "Your order is confirmed!");

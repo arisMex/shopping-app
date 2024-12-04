@@ -5,7 +5,6 @@ import { CameraView, Camera } from "expo-camera";
 import TabBar from '../components/TabNavigation';
 import TopBar from '../components/TopBar';
 import { MaterialIcons } from '@expo/vector-icons';
-import Constants from "expo-constants";
 
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -13,10 +12,9 @@ import { ThemeContext } from '../contexts/ThemeContext';
 
 
 import DbUtils from '../helpers/dbUtils';
+import { fetchItemDetails } from '../services/paymentService';
 
 export default function CodeBarScanner({ navigation }) {
-  const apiUrl = Constants.expoConfig.extra.apiUrl;
-  const userId = Constants.expoConfig.extra.userId;
 
   const [hasPermission, setHasPermission] = useState(null);
   const [scanned, setScanned] = useState(false);
@@ -54,27 +52,7 @@ export default function CodeBarScanner({ navigation }) {
     setTotalPrice(total);
   };
 
-  const fetchItemDetails = async (item_barcode) => {
-    try {
-      const response = await fetch(`${apiUrl}/items/barcode/${item_barcode}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-
-      const { id, name, price, barcode } = await response.json();
-
-      return { id, name, price, barcode };
-    } catch (error) {
-      console.log('Error fetching item details:', error);
-      return null;
-    }
-  };
+  
 
   useEffect(() => {
     openDatabase();
