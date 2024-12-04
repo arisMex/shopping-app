@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useContext, useCallback } from 'react';
-import { Text, View, StyleSheet, StatusBar, Platform, Image, TouchableOpacity, ScrollView } from 'react-native';
+import { Text, View, StyleSheet, StatusBar, Platform, ScrollView } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native'; // Import du hook
-import { MaterialIcons } from '@expo/vector-icons';
 import TabBar from '../components/TabNavigation';
 import TopBar from '../components/TopBar';
 import DbUtils from '../helpers/dbUtils';
+import { PaymentItem } from '../components/History/PaymentItem';
+import { EmptyHistory } from '../components/History/EmptyHistory';
 import { ThemeContext } from '../contexts/ThemeContext';
 import { fetchPaymentsByCustomerId } from '../services/paymentService';
 
@@ -31,6 +32,7 @@ export default function History({ navigation }) {
       openDatabase(); // Appeler la fonction openDatabase
     }, [])
   );
+
   const toggleExpand = (id) => {
     setExpandedItems((prev) => ({
       ...prev,
@@ -43,94 +45,41 @@ export default function History({ navigation }) {
       <StatusBar
         animated={true}
         backgroundColor={theme.topBarColor}
-        barStyle={'light-content'} //TODO: Set this to 'dark-content' for light background
+        barStyle={'light-content'}
         translucent={true}
         hidden={Platform.OS === "ios"}
       />
-
       <TopBar />
-
       <TabBar navigation={navigation} />
-
       <ScrollView style={styles.myScrollView}>
         <Text style={styles.header}>Historique :</Text>
-        {history.length == 0 && <Image
-          source={require("./../../assets/empty_cart.png")}
-          style={styles.image}
-          resizeMode="cover"
-        />}
-        {
+        {history.length === 0 ? (
+          <EmptyHistory />
+        ) : (
           history.map((payment) => (
             payment.is_checked &&
-            <View key={payment.id} style={[styles.paymentContainer, theme.itemCard]} >
-              <View style={styles.state}>
-                <MaterialIcons
-                  name={"payment"}
-                  size={15}
-                  color="red"
-                  style={styles.toggleIcon} // Add style to adjust icon position
-                />
-                <Text style={theme.text}>  Etat: {payment.is_checked ? "Validé" : "Non validé"} </Text>
-              </View>
-
-              {
-                payment.is_checked && (
-                  <View style={styles.state}>
-                    <MaterialIcons
-                      name={"calendar-today"}
-                      size={15}
-                      color="red"
-                      style={styles.toggleIcon}
-                    />
-                    <Text style={theme.text}>  Date: {payment.checkout_date ? payment.checkout_date.split("T")[0] : "N/A"}</Text>
-                  </View>
-                )
-              }
-
-              {/* Toggle Button */}
-              < View >
-                <TouchableOpacity onPress={() => toggleExpand(payment.id)} style={styles.toggleButton} >
-                  <MaterialIcons
-                    name={expandedItems[payment.id] ? "keyboard-arrow-up" : "keyboard-arrow-down"}
-                    size={30}
-                    color="red"
-                    style={styles.toggleIcon} // Add style to adjust icon position
-                  />
-                </TouchableOpacity>
-              </View>
-
-              {/* Collapsible Purchased Items */}
-              {
-
-                expandedItems[payment.id] && (
-                  <View style={styles.itemsContainer}>
-                    {
-                      payment.purchased_items.map((item, index) => (
-                        <View key={index} style={styles.itemContainer} >
-                          <Text style={theme.text}>{index + 1}.     {item.item.name} </Text>
-                          < Text style={theme.greenText} > {item.item.price}€</Text>
-                          < Text style={theme.text}> x {item.amount} </Text>
-                        </View>
-                      ))
-                    }
-                  </View>
-                )
-              }
-            </View>
-          ))}
+            <PaymentItem
+              key={payment.id}
+              payment={payment}
+              expanded={expandedItems[payment.id]}
+              toggleExpand={toggleExpand}
+              theme={theme}
+            />
+          ))
+        )}
       </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  myScrollView: {
-    maxHeight: "80%",
-  },
   container: {
     flex: 1,
     width: '100%',
     marginTop: Platform.OS !== 'ios' ? 20 : 0,
+  },
+  myScrollView: {
+    maxHeight: "80%",
   },
   header: {
     fontSize: 24,
@@ -139,37 +88,4 @@ const styles = StyleSheet.create({
     marginVertical: 20,
     paddingHorizontal: 16,
   },
-  paymentContainer: {
-    padding: 16,
-    marginBottom: 16,
-    borderRadius: 8,
-    margin: 16
-  },
-  toggleButton: {
-    color: '#007BFF',
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginTop: 10,
-  },
-  itemsContainer: {
-    paddingTop: 10,
-  },
-  itemContainer: {
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-    flexDirection: "row",
-    justifyContent: 'space-between',
-    marginHorizontal: 16,
-  },
-  toggleButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginLeft: "90%",
-  },
-  state: {
-    flexDirection: "row",
-  }
-
-
 });
