@@ -1,20 +1,25 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { Text, View, StyleSheet, Button, TextInput, FlatList, Alert, StatusBar, Platform, TouchableOpacity } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { CameraView, Camera } from "expo-camera";
 
 import TabBar from '../components/TabNavigation';
 import TopBar from '../components/TopBar';
 import { MaterialIcons } from '@expo/vector-icons';
+import Constants from "expo-constants";
+
+//import CameraScanner from '../components/CodeBarScanner/CameraScanner';
+import InputBar from '../components/CodeBarScanner/InputBar';
 
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ThemeContext } from '../contexts/ThemeContext';
 
 
 import DbUtils from '../helpers/dbUtils';
-import { fetchItemDetails } from '../services/paymentService';
 
 export default function CodeBarScanner({ navigation }) {
+  const apiUrl = Constants.expoConfig.extra.apiUrl;
+  const userId = Constants.expoConfig.extra.userId;
 
   const [hasPermission, setHasPermission] = useState(null);
   const [scanned, setScanned] = useState(false);
@@ -52,7 +57,27 @@ export default function CodeBarScanner({ navigation }) {
     setTotalPrice(total);
   };
 
-  
+  const fetchItemDetails = async (item_barcode) => {
+    try {
+      const response = await fetch(`${apiUrl}/items/barcode/${item_barcode}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      const { id, name, price, barcode } = await response.json();
+
+      return { id, name, price, barcode };
+    } catch (error) {
+      console.log('Error fetching item details:', error);
+      return null;
+    }
+  };
 
   useEffect(() => {
     openDatabase();
@@ -67,6 +92,12 @@ export default function CodeBarScanner({ navigation }) {
     getCameraPermissions();
   }, []);
 
+  useFocusEffect(
+    useCallback(() => {
+      openDatabase();
+    }, [])
+  );
+
   // const sleep = (ms) => {
   //   return new Promise(resolve => setTimeout(resolve, ms));
   // };
@@ -78,18 +109,18 @@ export default function CodeBarScanner({ navigation }) {
     if (isScanning || scanned) {
       return;
     }
-  
+
     isScanning = true; // Verrou local
     setScanned(true);
-  
+
     console.log(`Code barre scanné! Type: ${type} Data: ${data}`);
-  
+
     try {
       const item_barcode = data;
-  
+
       // Fetch item details depuis le serveur
       const itemDetails = await fetchItemDetails(item_barcode);
-      
+
       if (itemDetails) {
         // Traitement des détails de l'élément
         setPanier(prevPanier => {
@@ -115,18 +146,18 @@ export default function CodeBarScanner({ navigation }) {
     } catch (error) {
       console.error("Erreur lors du scan :", error);
     }
-  
+
     await sleep(1500); // Période de cooldown
     isScanning = false; // Débloque les scans
     setScanned(false);
     setError({ error: false, text: "" });
     setOpacityColor("green");
   };
-  
+
   // Fonction sleep
   const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
-  
-  
+
+
 
   // Fonction pour ajouter l'élément au panier
   const addItemToCart = async (itemDetails) => {
@@ -201,12 +232,14 @@ export default function CodeBarScanner({ navigation }) {
       <StatusBar
         animated={true}
         backgroundColor={theme.topBarColor}
-        barStyle={'light-content'} //TODO dark/light
+        barStyle={theme.topBarColor} //TODO dark/light
         translucent={true}
         hidden={Platform.OS === "ios"}
       />
 
       <TopBar />
+
+
 
       <CameraView
 
@@ -245,6 +278,10 @@ export default function CodeBarScanner({ navigation }) {
 
 
       <View style={styles.inputView}>
+
+
+
+
         <TextInput
           style={styles.input}
           onChangeText={onChangeNumber}
@@ -262,6 +299,13 @@ export default function CodeBarScanner({ navigation }) {
         </TouchableOpacity>
 
       </View>
+
+      {/* <InputBar
+          number={number}
+          onChangeText={onChangeNumber}
+          onManualAdd={onManualAdd}
+          isDisabled={isDisabled}
+        /> */}
 
       <View style={styles.totalPriceContainer}>
         <Text style={styles.totalPriceText}>
